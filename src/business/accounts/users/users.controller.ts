@@ -5,6 +5,7 @@ import {
 	Get,
 	HttpCode,
 	HttpStatus,
+	NotAcceptableException,
 	Param,
 	ParseUUIDPipe,
 	Patch,
@@ -16,7 +17,7 @@ import { USER_TOKEN } from "core/constants/user-token.constants";
 import { type Request, type Response } from "express";
 import { ErrorHandler } from "src/core/config/error/ErrorHandler";
 import { UserPayload } from "../../../../types/express";
-import { Admin, Authenticated } from "../auth/decorators/index.decorator";
+import { Admin, Authenticated, SellerOrAdmin } from "../auth/decorators/index.decorator";
 import { JwtAuthGuard } from "../auth/guard/jwt-auth.guard";
 import { RolesGuard } from "../auth/guard/role.guard";
 import { UpdateUsersDto } from "./dto/update-user.dto";
@@ -73,12 +74,21 @@ export class UsersController {
 	@Authenticated()
 	@Patch()
 	@HttpCode(HttpStatus.NO_CONTENT)
-	async updateUser(@Req() req: Request, @Body() updateUsersDto: UpdateUsersDto) {
-		const id_user = req.user?.id_user as string;
-		try {
-			await this.usersService.update(updateUsersDto, id_user);
-		} catch (error) {
-			ErrorHandler(error);
+	updateUser(@Req() req: Request, @Body() updateUsersDto: UpdateUsersDto) {
+		if (updateUsersDto.role) {
+			throw new NotAcceptableException("You can't change the role");
 		}
+		const id_user = req.user?.id_user as string;
+		return this.usersService.update(updateUsersDto, id_user);
+	}
+
+	@SellerOrAdmin()
+	@Patch()
+	@HttpCode(HttpStatus.NO_CONTENT)
+	updateUsingAdmin(
+		@Body() updateUsersDto: UpdateUsersDto,
+		@Param("id_user", new ParseUUIDPipe()) id_user: string,
+	) {
+		return this.usersService.updateUsingAdmin(updateUsersDto, id_user);
 	}
 }

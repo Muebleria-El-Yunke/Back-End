@@ -13,10 +13,17 @@ export class JwtAuthGuard extends AuthGuard(JWT_AUTH_GUARD) {
 	}
 
 	canActivate(context: ExecutionContext) {
-		const isPublic = this.#isPublicRoute(context);
+		const isPublic = this.reflector.getAllAndOverride<boolean>(PUBLIC_KEY, [
+			context.getHandler(),
+			context.getClass(),
+		]);
 
-		if (isPublic) {
-			this.logger.debug("Public route accessed, skipping authentication");
+		const roles = this.reflector.getAllAndOverride<boolean>(ROLES_KEY, [
+			context.getHandler(),
+			context.getClass(),
+		]);
+
+		if (isPublic || !roles) {
 			return true;
 		}
 
@@ -29,43 +36,23 @@ export class JwtAuthGuard extends AuthGuard(JWT_AUTH_GUARD) {
 		info: any,
 		context: ExecutionContext,
 	): TUser {
+		const request = context.switchToHttp().getRequest();
+
 		if (err || !user) {
-			const request = context.switchToHttp().getRequest();
+			// Log de seguridad sin exponer datos sensibles
 			this.logger.warn(
-				`Authentication failed for ${request.method} ${request.url}: ${
-					info?.message || err?.message || "Unknown error"
-				}`,
+				`Authentication failed for ${request.method} ${request.path} from IP: ${request.ip}`,
 			);
 
 			throw (
 				err ||
-				new UnauthorizedException(
-					info?.message || "Authentication failed. Please provide a valid token.",
-				)
+				new UnauthorizedException("Authentication required. Please login to access this resource.")
 			);
 		}
 
+		// Log exitoso (opcional, comentar en producción si genera mucho ruido)
+		// this.logger.debug(`Authenticated user ${user.id_user} accessing ${request.path}`);
+
 		return user;
-	}
-
-	#isPublicRoute(context: ExecutionContext): boolean {
-		// Verificar si está marcado explícitamente como público
-		const isPublic = this.reflector.getAllAndOverride<boolean>(PUBLIC_KEY, [
-			context.getHandler(),
-			context.getClass(),
-		]);
-
-		if (isPublic === true) {
-			return true;
-		}
-
-		// Verificar si hay roles definidos en el método o clase
-		const hasRoles = this.reflector.getAllAndOverride<any>(ROLES_KEY, [
-			context.getHandler(),
-			context.getClass(),
-		]);
-
-		// Si no hay roles definidos, considerar la ruta como pública
-		return hasRoles === undefined || hasRoles === null;
 	}
 }

@@ -1,6 +1,8 @@
 import { Global, Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { CookieModule } from "core/config/cookies/cookie.module";
 import { EnvModule } from "src/core/config/envs/env.module";
 import { UsersModule } from "../users/users.module";
 import { AuthController } from "./auth.controller";
@@ -19,6 +21,13 @@ import { JwtStrategy } from "./strategy/jwt.strategy";
 			defaultStrategy: "jwt",
 			session: false,
 		}),
+		ThrottlerModule.forRoot([
+			{
+				ttl: 60000,
+				limit: 10,
+			},
+		]),
+		CookieModule,
 		JwtModule.registerAsync(JwtConfig),
 	],
 	controllers: [AuthController],

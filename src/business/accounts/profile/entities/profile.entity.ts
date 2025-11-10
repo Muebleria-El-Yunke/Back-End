@@ -16,6 +16,25 @@ export class Profile {
 	@Column({ nullable: false })
 	age: number;
 
+	@Column({ default: false })
+	seller_principal: boolean;
+
+	// * Social Networks
+	@Column({ nullable: true })
+	country_prefix: string;
+
+	@Column({ nullable: true })
+	phone_number: string;
+
+	@Column({ nullable: true })
+	facebook: string;
+
+	@Column({ nullable: true })
+	instagram: string;
+
+	@Column({ nullable: true })
+	whatsapp: string;
+
 	// ! Relations
 	@Exclude()
 	@OneToOne(

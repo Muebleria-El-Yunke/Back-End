@@ -36,14 +36,14 @@ export class BlogService {
 				const { results } = await this.imagesService.createManyImages(
 					photos,
 					PhotoOfEnum.BLOG,
-					savedBlog.id_blog,
+					savedBlog.id_post,
 				);
 
 				imageData = results || [];
 
 				// Actualizar el blog con los IDs de las imágenes
 				if (imageData.length > 0) {
-					await this.blogRepository.update(savedBlog.id_blog, {
+					await this.blogRepository.update(savedBlog.id_post, {
 						id_images: imageData.map((img) => img.id_image),
 					});
 				}
@@ -62,12 +62,12 @@ export class BlogService {
 	}
 
 	// * <<- Update solo datos del blog ->>
-	async update(id_blog: string, updateBlogDto: UpdateBlogDto): Promise<Blog> {
+	async update(id_post: string, updateBlogDto: UpdateBlogDto): Promise<Blog> {
 		try {
-			const blog = await this.blogRepository.findOne({ where: { id_blog } });
+			const blog = await this.blogRepository.findOne({ where: { id_post } });
 
 			if (!blog) {
-				throw new NotFoundException(`Blog with ID ${id_blog} not found`);
+				throw new NotFoundException(`Blog with ID ${id_post} not found`);
 			}
 
 			// Actualizar slug si se cambia el título
@@ -76,8 +76,8 @@ export class BlogService {
 			}
 
 			// Actualizar blog
-			Object.assign(blog, updateBlogDto);
-			return await this.blogRepository.save(blog);
+			const blogUpdate = Object.assign(blog, updateBlogDto);
+			return await this.blogRepository.save(blogUpdate);
 		} catch (error) {
 			ErrorHandler(error);
 			throw error;
@@ -86,21 +86,21 @@ export class BlogService {
 
 	// * <<- Añadir imágenes a un blog existente ->>
 	async addImages(
-		id_blog: string,
+		id_post: string,
 		photos: Express.Multer.File[] | string[],
 	): Promise<{ id_image: string; url: string }[]> {
 		try {
-			const blog = await this.blogRepository.findOne({ where: { id_blog } });
+			const blog = await this.blogRepository.findOne({ where: { id_post } });
 
 			if (!blog) {
-				throw new NotFoundException(`Blog with ID ${id_blog} not found`);
+				throw new NotFoundException(`Blog with ID ${id_post} not found`);
 			}
 
 			// Crear nuevas imágenes
 			const { results } = await this.imagesService.createManyImages(
 				photos,
 				PhotoOfEnum.BLOG,
-				id_blog,
+				id_post,
 			);
 
 			const newImages = results || [];
@@ -110,7 +110,7 @@ export class BlogService {
 				const currentImages = blog.id_images || [];
 				const updatedImages = [...currentImages, ...newImages.map((img) => img.id_image)];
 
-				await this.blogRepository.update(id_blog, {
+				await this.blogRepository.update(id_post, {
 					id_images: updatedImages,
 				});
 			}
@@ -123,17 +123,17 @@ export class BlogService {
 	}
 
 	// * <<- Eliminar una imagen específica ->>
-	async removeImage(id_blog: string, id_image: string): Promise<void> {
+	async removeImage(id_post: string, id_image: string): Promise<void> {
 		try {
-			const blog = await this.blogRepository.findOne({ where: { id_blog } });
+			const blog = await this.blogRepository.findOne({ where: { id_post } });
 
 			if (!blog) {
-				throw new NotFoundException(`Blog with ID ${id_blog} not found`);
+				throw new NotFoundException(`Blog with ID ${id_post} not found`);
 			}
 
 			// Verificar que la imagen pertenece al blog
 			if (!blog.id_images?.includes(id_image)) {
-				throw new NotFoundException(`Image ${id_image} not found in blog ${id_blog}`);
+				throw new NotFoundException(`Image ${id_image} not found in blog ${id_post}`);
 			}
 
 			// Eliminar la imagen de Cloudinary y DB
@@ -144,14 +144,14 @@ export class BlogService {
 
 			if (image?.id_public) {
 				await this.imagesService.delete({
-					id_relation: id_blog,
+					id_relation: id_post,
 					photoOf: PhotoOfEnum.BLOG,
 				});
 			}
 
 			// Actualizar id_images del blog
 			const updatedImages = blog.id_images.filter((img) => img !== id_image);
-			await this.blogRepository.update(id_blog, {
+			await this.blogRepository.update(id_post, {
 				id_images: updatedImages,
 			});
 		} catch (error) {
@@ -161,19 +161,19 @@ export class BlogService {
 	}
 
 	// * <<- Eliminar todas las imágenes de un blog ->>
-	async removeAllImages(id_blog: string): Promise<void> {
+	async removeAllImages(id_post: string): Promise<void> {
 		try {
-			const blog = await this.blogRepository.findOne({ where: { id_blog } });
+			const blog = await this.blogRepository.findOne({ where: { id_post } });
 
 			if (!blog) {
-				throw new NotFoundException(`Blog with ID ${id_blog} not found`);
+				throw new NotFoundException(`Blog with ID ${id_post} not found`);
 			}
 
 			// Eliminar todas las imágenes
-			await this.imagesService.deleteRelation(id_blog, PhotoOfEnum.BLOG, false);
+			await this.imagesService.deleteRelation(id_post, PhotoOfEnum.BLOG, false);
 
 			// Limpiar id_images del blog
-			await this.blogRepository.update(id_blog, {
+			await this.blogRepository.update(id_post, {
 				id_images: [],
 			});
 		} catch (error) {
@@ -184,15 +184,15 @@ export class BlogService {
 
 	// * <<- Reemplazar todas las imágenes ->>
 	async replaceImages(
-		id_blog: string,
+		id_post: string,
 		photos: Express.Multer.File[] | string[],
 	): Promise<{ id_image: string; url: string }[]> {
 		try {
 			// Primero eliminar todas las imágenes existentes
-			await this.removeAllImages(id_blog);
+			await this.removeAllImages(id_post);
 
 			// Luego añadir las nuevas
-			return await this.addImages(id_blog, photos);
+			return await this.addImages(id_post, photos);
 		} catch (error) {
 			ErrorHandler(error);
 			throw error;
@@ -211,8 +211,8 @@ export class BlogService {
 
 			return await Promise.all(
 				blogs.map(async (blog) => {
-					const images = await this.imagesService.findRelationsById({
-						id_relation: blog.id_blog,
+					const images = await this.imagesService.findRelationsByIdOrdered({
+						id_relation: blog.id_post,
 						photoOf: PhotoOfEnum.BLOG,
 					});
 
@@ -245,7 +245,7 @@ export class BlogService {
 			return await Promise.all(
 				blogs.map(async (blog) => {
 					const images = await this.imagesService.findRelationsById({
-						id_relation: blog.id_blog,
+						id_relation: blog.id_post,
 						photoOf: PhotoOfEnum.BLOG,
 					});
 
@@ -278,7 +278,7 @@ export class BlogService {
 			return await Promise.all(
 				blogs.map(async (blog) => {
 					const images = await this.imagesService.findRelationsById({
-						id_relation: blog.id_blog,
+						id_relation: blog.id_post,
 						photoOf: PhotoOfEnum.BLOG,
 					});
 
@@ -313,7 +313,7 @@ export class BlogService {
 			return await Promise.all(
 				filteredBlogs.map(async (blog) => {
 					const images = await this.imagesService.findRelationsById({
-						id_relation: blog.id_blog,
+						id_relation: blog.id_post,
 						photoOf: PhotoOfEnum.BLOG,
 					});
 
@@ -332,12 +332,12 @@ export class BlogService {
 		}
 	}
 
-	async findOne(id_blog: string, withImages: boolean = true) {
+	async findOne(id_post: string, withImages: boolean = true) {
 		try {
-			const blog = await this.blogRepository.findOne({ where: { id_blog } });
+			const blog = await this.blogRepository.findOne({ where: { id_post } });
 
 			if (!blog) {
-				throw new NotFoundException(`Blog with ID ${id_blog} not found`);
+				throw new NotFoundException(`Blog with ID ${id_post} not found`);
 			}
 
 			// Incrementar vistas
@@ -348,7 +348,7 @@ export class BlogService {
 			}
 
 			const images = await this.imagesService.findRelationsById({
-				id_relation: blog.id_blog,
+				id_relation: blog.id_post,
 				photoOf: PhotoOfEnum.BLOG,
 			});
 
@@ -381,7 +381,7 @@ export class BlogService {
 			}
 
 			const images = await this.imagesService.findRelationsById({
-				id_relation: blog.id_blog,
+				id_relation: blog.id_post,
 				photoOf: PhotoOfEnum.BLOG,
 			});
 
@@ -398,16 +398,16 @@ export class BlogService {
 		}
 	}
 
-	async remove(id_blog: string): Promise<void> {
+	async remove(id_post: string): Promise<void> {
 		try {
-			const blog = await this.blogRepository.findOne({ where: { id_blog } });
+			const blog = await this.blogRepository.findOne({ where: { id_post } });
 
 			if (!blog) {
-				throw new NotFoundException(`Blog with ID ${id_blog} not found`);
+				throw new NotFoundException(`Blog with ID ${id_post} not found`);
 			}
 
 			// Eliminar imágenes asociadas
-			await this.imagesService.deleteRelation(blog.id_blog, PhotoOfEnum.BLOG, false);
+			await this.imagesService.deleteRelation(blog.id_post, PhotoOfEnum.BLOG, false);
 
 			// Eliminar blog
 			await this.blogRepository.remove(blog);

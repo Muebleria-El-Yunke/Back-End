@@ -1,44 +1,57 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { Roles } from "business/accounts/auth/decorators/index.decorator";
-import { ROLE } from "core/enum/role.enum";
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	Param,
+	Patch,
+	Post,
+	Query,
+	UseGuards,
+} from "@nestjs/common";
+import { SellerOrAdmin } from "business/accounts/auth/decorators/index.decorator";
+import { JwtAuthGuard } from "business/accounts/auth/guard/jwt-auth.guard";
+import { RolesGuard } from "business/accounts/auth/guard/role.guard";
+import { PaginationDto } from "core/dto/pagination.dto";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { Category } from "./enum/category.enum";
 import { ProductsService } from "./products.service";
 
 @Controller("products")
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductsController {
 	constructor(private readonly productsService: ProductsService) {}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@Post()
 	create(@Body() createProductDto: CreateProductDto) {
 		return this.productsService.create(createProductDto);
 	}
 
 	@Get()
-	findAll() {
-		return this.productsService.findAll();
+	findAll(@Query() paginationDto: PaginationDto) {
+		return this.productsService.findAll(paginationDto);
 	}
 
 	@Get("active")
-	findActive() {
-		return this.productsService.findActive();
+	findActive(@Query() paginationDto: PaginationDto) {
+		return this.productsService.findActive(paginationDto);
 	}
 
 	@Get("featured")
-	findFeatured() {
-		return this.productsService.findFeatured();
+	findFeatured(@Query() paginationDto: PaginationDto) {
+		return this.productsService.findFeatured(paginationDto);
 	}
 
 	@Get("in-stock")
-	findInStock() {
-		return this.productsService.findInStock();
+	findInStock(@Query() paginationDto: PaginationDto) {
+		return this.productsService.findInStock(paginationDto);
 	}
 
 	@Get("category/:category")
-	findByCategory(@Param("category") category: Category) {
-		return this.productsService.findByCategory(category);
+	findByCategory(@Param("category") category: Category, @Query() paginationDto: PaginationDto) {
+		return this.productsService.findByCategory(category, paginationDto);
 	}
 
 	@Get("slug/:slug")
@@ -51,43 +64,43 @@ export class ProductsController {
 		return this.productsService.findOne(id);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@Patch(":id")
 	update(@Param("id") id: string, @Body() updateProductDto: UpdateProductDto) {
 		return this.productsService.update(id, updateProductDto);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@Patch(":id/toggle-active")
 	toggleActive(@Param("id") id: string) {
 		return this.productsService.toggleActive(id);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@Patch(":id/toggle-featured")
 	toggleFeatured(@Param("id") id: string) {
 		return this.productsService.toggleFeatured(id);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@Patch(":id/stock")
 	updateStock(@Param("id") id: string, @Body("quantity") quantity: number) {
 		return this.productsService.updateStock(id, quantity);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@Patch(":id/stock/increment")
 	incrementStock(@Param("id") id: string, @Body("quantity") quantity: number) {
 		return this.productsService.incrementStock(id, quantity);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@Patch(":id/stock/decrement")
 	decrementStock(@Param("id") id: string, @Body("quantity") quantity: number) {
 		return this.productsService.decrementStock(id, quantity);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@Delete(":id")
 	remove(@Param("id") id: string) {
 		return this.productsService.remove(id);

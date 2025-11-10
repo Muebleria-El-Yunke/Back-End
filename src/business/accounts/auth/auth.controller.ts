@@ -5,68 +5,98 @@ import {
 	HttpCode,
 	HttpStatus,
 	Post,
+	Req,
 	Res,
 	UnauthorizedException,
+	UseGuards,
 } from "@nestjs/common";
-import { CookieOptions, type Response } from "express";
-import { EnvService } from "src/core/config/envs/env.service";
-import { MAX_AGE } from "src/core/constants/max-age.constants";
-import { USER_TOKEN } from "src/core/constants/user-token.constants";
+import { Throttle } from "@nestjs/throttler";
+import { CookieService } from "core/config/cookies/cookies.service";
+import express from "express";
 import { AuthService } from "./auth.service";
 import { LoginUserDto } from "./dto/login-user.dto";
 import { RegisterAuthDto } from "./dto/register-user.dto";
+import { JwtAuthGuard } from "./guard/jwt-auth.guard";
+import { AuthInterface } from "./interface/auth.interface";
 
 @Controller("auth")
 export class AuthController {
-	readonly #isProduction: boolean;
-	readonly #cookieBaseOptions: CookieOptions;
-
 	constructor(
 		private readonly authService: AuthService,
-		private readonly envService: EnvService,
-	) {
-		this.#isProduction = this.envService.get("NODE_ENV") === "production";
-		this.#cookieBaseOptions = {
-			httpOnly: true,
-			sameSite: this.#isProduction ? "strict" : "lax",
-			secure: this.#isProduction,
-			maxAge: MAX_AGE,
-		};
-	}
+		private readonly cookieService: CookieService,
+	) {}
 
 	@Post("login")
-	@HttpCode(HttpStatus.ACCEPTED)
-	async login(@Res({ passthrough: true }) res: Response, @Body() loginUserDto: LoginUserDto) {
+	@HttpCode(HttpStatus.OK)
+	@Throttle({ default: { limit: 3, ttl: 60000 * 10 } }) // 5 intentos por 10 minutos
+	async login(
+		@Res({ passthrough: true }) res: express.Response,
+		@Body() loginUserDto: LoginUserDto,
+	) {
 		const userJwt = await this.authService.login(loginUserDto);
+
 		if (!userJwt) {
-			throw new UnauthorizedException("Invalid username, email or password");
+			throw new UnauthorizedException("Invalid credentials");
 		}
-		this.#CookieAuth(res, userJwt);
-		return { message: "Successful login" };
+
+		const { AccessToken, ...UserPayload } = userJwt;
+		// Logging de seguridad (sin exponer datos sensibles)
+		this.cookieService.setAuthToken(res, AccessToken);
+
+		return {
+			data: UserPayload,
+		};
 	}
 
 	@Post("register")
 	@HttpCode(HttpStatus.CREATED)
-	async register(@Res({ passthrough: true }) res: Response, @Body() registerAuth: RegisterAuthDto) {
+	@Throttle({ default: { limit: 5, ttl: 60000 * 5 } }) // 5 intentos por 5 minutos
+	async register(
+		@Res({ passthrough: true }) res: express.Response,
+		@Body() registerAuth: RegisterAuthDto,
+	) {
 		const userJwt = await this.authService.register(registerAuth);
+
 		if (!userJwt) {
-			throw new BadRequestException("Could not log in with the entered user");
+			throw new BadRequestException("Registration failed");
 		}
-		this.#CookieAuth(res, userJwt);
-		return { message: "Registration successful" };
+
+		const { AccessToken, ...UserPayload } = userJwt;
+		this.cookieService.setAuthToken(res, AccessToken);
+		return {
+			data: UserPayload,
+		};
 	}
 
+	@UseGuards(JwtAuthGuard)
 	@Post("logout")
-	@HttpCode(HttpStatus.NO_CONTENT)
-	logout(@Res({ passthrough: true }) res: Response) {
-		res.clearCookie(USER_TOKEN);
-		return { message: "hola" };
+	@HttpCode(HttpStatus.OK)
+	async logout(@Res({ passthrough: true }) res: express.Response) {
+		this.cookieService.clearAuthToken(res);
+		return { message: "Logout successful" };
 	}
 
-	// ! Private
-	#CookieAuth(res: Response, token: string) {
-		res.cookie(USER_TOKEN, token, {
-			...this.#cookieBaseOptions,
-		});
+	@UseGuards(JwtAuthGuard)
+	@Post("refresh")
+	@HttpCode(HttpStatus.OK)
+	@Throttle({ default: { limit: 3, ttl: 60000 * 10 } }) // 3 intentos por 10 minutos
+	async refresh(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+		const user = req.user as AuthInterface;
+
+		if (!user) {
+			throw new UnauthorizedException("Invalid user session");
+		}
+
+		const refreshedData = await this.authService.refreshToken(user);
+		if (!refreshedData) {
+			throw new UnauthorizedException("Failed to refresh token");
+		}
+
+		const { AccessToken, ...UserPayload } = refreshedData;
+		this.cookieService.setAuthToken(res, AccessToken);
+		return {
+			message: "Token refreshed successfully",
+			data: UserPayload,
+		};
 	}
 }

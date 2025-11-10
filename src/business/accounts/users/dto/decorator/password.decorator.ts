@@ -15,7 +15,7 @@ export function IsPassword(
 	return applyDecorators(
 		IsStrongPassword(
 			OptionPassword ?? {
-				minLength: 8,
+				minLength: LENGTH.min,
 				minLowercase: 1,
 				minNumbers: 1,
 				minUppercase: 1,

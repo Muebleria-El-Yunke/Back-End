@@ -9,7 +9,7 @@ import {
 @Entity()
 export class Blog {
 	@PrimaryGeneratedColumn("uuid")
-	id_blog: string;
+	id_post: string;
 
 	@Column({ type: "varchar", length: 255 })
 	title: string;

@@ -11,21 +11,21 @@ export class AdminService implements OnModuleInit {
 	) {}
 	async onModuleInit() {
 		try {
-			const admin = this.#createAdmin();
-			const CreateAdmin = await this.usersService.createAdmin(admin);
-			if (CreateAdmin) Logger.log("Admin Created", "Initial Application...");
+			const admin = await this.#createAdmin();
+			if (admin) Logger.log("Admin Created", "Initial Application...");
 			return;
 		} catch (error) {
 			ErrorHandler(error);
 		}
 	}
 
-	#createAdmin() {
+	async #createAdmin() {
 		const admin = {
 			email: this.envsService.get("EMAIL_ADMIN"),
 			password: this.envsService.get("PASSWORD_ADMIN"),
 			user_name: this.envsService.get("NAME_ADMIN"),
 		};
-		return admin;
+		const CreateAdmin = await this.usersService.createAdmin(admin);
+		return CreateAdmin;
 	}
 }

@@ -11,11 +11,10 @@ import {
 	UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { Roles } from "business/accounts/auth/decorators/index.decorator";
+import { SellerOrAdmin } from "business/accounts/auth/decorators/index.decorator";
 import { JwtAuthGuard } from "business/accounts/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "business/accounts/auth/guard/role.guard";
 import { imageUploadOptions } from "core/config/multer/image-upload.config";
-import { ROLE } from "core/enum/role.enum";
 import { BlogService } from "./blog.service";
 import { CreateBlogDto } from "./dto/create-blog.dto";
 import { UpdateBlogDto } from "./dto/update-blog.dto";
@@ -25,7 +24,7 @@ import { UpdateBlogDto } from "./dto/update-blog.dto";
 export class BlogController {
 	constructor(private readonly blogService: BlogService) {}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
+	@SellerOrAdmin()
 	@UseInterceptors(FileInterceptor("photo", imageUploadOptions))
 	@Post()
 	create(
@@ -60,20 +59,20 @@ export class BlogController {
 		return this.blogService.findBySlug(slug);
 	}
 
-	@Get(":id")
-	findOne(@Param("id") id: string) {
-		return this.blogService.findOne(id);
+	@Get(":id_post")
+	findOne(@Param("id_post") id_post: string) {
+		return this.blogService.findOne(id_post);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
-	@Patch(":id")
-	update(@Param("id") id: string, @Body() updateBlogDto: UpdateBlogDto) {
-		return this.blogService.update(id, updateBlogDto);
+	@SellerOrAdmin()
+	@Patch(":id_post")
+	update(@Param("id_post") id_post: string, @Body() updateBlogDto: UpdateBlogDto) {
+		return this.blogService.update(id_post, updateBlogDto);
 	}
 
-	@Roles(ROLE.ADMIN, ROLE.SELLER)
-	@Delete(":id")
-	remove(@Param("id") id: string) {
-		return this.blogService.remove(id);
+	@SellerOrAdmin()
+	@Delete(":id_post")
+	remove(@Param("id_post") id_post: string) {
+		return this.blogService.remove(id_post);
 	}
 }

@@ -7,12 +7,13 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PhotoOfEnum } from "business/common/photo.type";
+import { Image } from "business/photos/images/entities/image.entity";
 import { ImagesService } from "business/photos/images/images.service";
 import { ErrorHandler } from "src/core/config/error/ErrorHandler";
 import { Repository } from "typeorm";
 import { UsersService } from "../users/service/users.service";
 import { CreateProfileDto } from "./dto/create-profile.dto";
-import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { UpdateProfileDto, UpdateSellerDto } from "./dto/update-profile.dto";
 import { Profile } from "./entities/profile.entity";
 import { IdsProfileInterface } from "./interface/profile.interface";
 
@@ -33,10 +34,12 @@ export class ProfileService {
 			const profiles = await this.profileRepository.find();
 
 			if (!withImage) {
-				return profiles;
+				return profiles.map((profile) => ({
+					...profile,
+					whatsapp_link: this.getWhatsAppLink(profile),
+				}));
 			}
 
-			// Usar Promise.all para consultas paralelas en lugar de secuenciales
 			const profilesWithImages = await Promise.all(
 				profiles.map(async (profile) => {
 					const image = await this.imagesService.findOneById({
@@ -48,6 +51,7 @@ export class ProfileService {
 					return {
 						...profileNormalize,
 						image: { url: image?.url as string, id_image },
+						whatsapp_link: this.getWhatsAppLink(profile),
 					};
 				}),
 			);
@@ -77,7 +81,10 @@ export class ProfileService {
 					image: { url: image?.url as string, id_image },
 				};
 			}
-			return profile;
+
+			return {
+				...profile,
+			};
 		} catch (error) {
 			ErrorHandler(error);
 		}
@@ -197,5 +204,60 @@ export class ProfileService {
 		} catch (error) {
 			ErrorHandler(error);
 		}
+	}
+
+	getWhatsAppLink(profile: Profile, message?: string) {
+		const { whatsapp } = profile;
+		const encodedMessage = message ? `?text=${encodeURIComponent(message)}` : "";
+		if (whatsapp) {
+			return `${profile.whatsapp}${encodedMessage}`;
+		}
+		const { phone_number, country_prefix } = profile;
+		const cleanPrefix = country_prefix.replace("+", "");
+		const cleanNumber = phone_number.replace(/^0+/, "");
+		const fullNumber = `${cleanPrefix}${cleanNumber}`;
+		if (!phone_number) return null;
+		// Formato: país sin + y número sin ceros iniciales
+		return `https://wa.me/${fullNumber}${encodedMessage}`;
+	}
+
+	async findSeller(findWithImage = false) {
+		const findSeller = await this.profileRepository.findOne({
+			where: { seller_principal: true },
+		});
+		if (!findSeller) throw new NotFoundException("No featured seller found");
+
+		const { id_image, user: _user, seller_principal: _seller_principal, ...seller } = findSeller;
+		if (findWithImage) {
+			const { url } = (await this.imagesService.findOneById({
+				id_image,
+				photoOf: PhotoOfEnum.BLOG,
+			})) as Image;
+			return {
+				...seller,
+				WhatsApp: this.getWhatsAppLink(findSeller),
+				image: {
+					id_image,
+					url,
+				},
+			};
+		}
+		return seller;
+	}
+
+	async updateSeller(id_image: string, updateSellerDto: UpdateSellerDto) {
+		const findSeller = await this.profileRepository.findOne({
+			where: { id_image },
+		});
+		if (!findSeller) throw new NotFoundException("No featured seller found");
+		const updateSeller = Object.assign(findSeller, updateSellerDto);
+
+		const {
+			id_image: _id_image,
+			user: _user,
+			seller_principal: _seller_principal,
+			...seller
+		} = await this.profileRepository.save(updateSeller);
+		return seller;
 	}
 }

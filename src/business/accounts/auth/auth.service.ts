@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ErrorHandler } from "src/core/config/error/ErrorHandler";
 import { CreateUserDto } from "../users/dto/create-user.dto";
@@ -8,34 +8,69 @@ import { AuthInterface } from "./interface/auth.interface";
 
 @Injectable()
 export class AuthService {
+	private readonly logger = new Logger(AuthService.name);
+
 	constructor(
 		private readonly authUserService: AuthUserService,
 		private readonly jwtService: JwtService,
 	) {}
 
 	async login(loginUserDto: LoginUserDto) {
+		const userLogin = await this.authUserService.loginUser(loginUserDto);
 		try {
-			const userLogin = await this.authUserService.loginUser(loginUserDto);
-			return this.#authManagement(userLogin);
+			return this.#generateToken(userLogin);
 		} catch (error) {
+			this.logger.error(`Login failed: ${error.message}`);
 			ErrorHandler(error);
 		}
 	}
 
 	async register(createUserDto: CreateUserDto) {
+		const userRegister = await this.authUserService.createUser(createUserDto);
 		try {
-			const userRegister = await this.authUserService.createUser(createUserDto);
-			return this.#authManagement(userRegister);
+			return this.#generateToken(userRegister);
 		} catch (error) {
+			this.logger.error(`Registration failed: ${error.message}`);
 			ErrorHandler(error);
 		}
 	}
 
-	#authManagement(user: AuthInterface) {
-		if (!user) {
+	async refreshToken(user: AuthInterface) {
+		if (!user || !user.id_user || !user.role) {
+			this.logger.warn("Invalid user data for token refresh");
+			throw new UnauthorizedException("Invalid user data");
+		}
+		try {
+			return this.#generateToken(user);
+		} catch (_error) {
+			throw new UnauthorizedException("Failed to refresh token");
+		}
+	}
+
+	async verifyToken(token: string) {
+		try {
+			const payload = await this.jwtService.verifyAsync(token);
+			return {
+				id_user: payload.id_user,
+				role: payload.role,
+			};
+		} catch (error) {
+			this.logger.warn(`Token verification failed: ${error.message}`);
 			return null;
 		}
-		const jwtAuth = this.jwtService.sign(user);
-		return jwtAuth;
+	}
+
+	#generateToken(user: AuthInterface) {
+		if (!user || !user.id_user || !user.role) {
+			this.logger.warn("Invalid user data for token generation");
+			return null;
+		}
+
+		const payload: AuthInterface = {
+			id_user: user.id_user,
+			role: user.role,
+		};
+
+		return { id_user: user.id_user, role: user.role, AccessToken: this.jwtService.sign(payload) };
 	}
 }

@@ -39,6 +39,7 @@ export const envSchema = z.object({
 	NAME_DB: z.string().nonempty({ message: "DB_NAME is required" }),
 	PORT_DB: z.coerce.number().int().positive({ message: "DB_PORT must be a positive integer" }),
 	HOST_DB: z.string().nonempty({ message: "DB_HOST is required" }).default("localhost"),
+	FRONTEND_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

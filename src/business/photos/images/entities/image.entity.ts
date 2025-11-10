@@ -3,6 +3,7 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 @Index(["photoOf", "id_relation"])
+@Index(["photoOf", "id_relation", "order"])
 export class Image {
 	@PrimaryGeneratedColumn("uuid")
 	id_image: string;
@@ -16,6 +17,11 @@ export class Image {
 	// * Polymorphic relations
 	@Column({ nullable: true, enum: PhotoOfEnum, type: "enum" })
 	photoOf: PhotoOfEnum;
+
 	@Column({ type: "uuid", nullable: true })
 	id_relation: string;
+
+	// * Order/Priority field
+	@Column({ type: "int", default: 0 })
+	order: number;
 }

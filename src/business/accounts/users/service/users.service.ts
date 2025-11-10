@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import {
+	BadRequestException,
+	Injectable,
+	NotAcceptableException,
+	NotFoundException,
+	UnauthorizedException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { isEmail } from "class-validator";
 import { ErrorHandler } from "src/core/config/error/ErrorHandler";
@@ -40,13 +46,35 @@ export class UsersService {
 	}
 
 	async update(updateUsersDto: UpdateUsersDto, id_user: string) {
-		const { new_password, ...users } = updateUsersDto;
-		if (new_password) {
-			users.password = await this.passwordService.encrypt(new_password);
+		const { role: _role, ...users } = updateUsersDto;
+		if (users.password) {
+			users.password = await this.passwordService.encrypt(users.password);
 		}
 		try {
 			await this.userRepository.update({ id_user }, users);
 			return;
+		} catch (error) {
+			ErrorHandler(error);
+		}
+	}
+
+	async updateUsingAdmin(updateUsersDto: UpdateUsersDto, id_user: string) {
+		const { role, ...userData } = updateUsersDto;
+		const user = await this.findOneById(id_user);
+		if (!user) throw new BadRequestException("User does not exist");
+		if (user.role === ROLE.ADMIN && role && role !== user.role) {
+			throw new NotAcceptableException("Admin role cannot be changed");
+		}
+		if (userData.password) {
+			userData.password = await this.passwordService.encrypt(userData.password);
+		}
+		try {
+			const userUpdate = Object.assign(user, userData);
+			if (role && role !== user.role) {
+				user.role = role;
+			}
+			const updatedUser = await this.userRepository.save(userUpdate);
+			return { message: "User updated successfully", user: updatedUser };
 		} catch (error) {
 			ErrorHandler(error);
 		}

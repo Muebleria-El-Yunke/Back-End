@@ -44,9 +44,7 @@ export function formatWords(input: string): string {
 			match.replace(p1, p1.toUpperCase()),
 		);
 	};
-
 	const cleanQuotes = (text: string) => text.replace(/\s*(['"“”‘’])\s*/g, "$1");
-
 	const formatUnits = (text: string) => text.replace(/(\d)\s+(kg|m|°C|cm|km|g|ml)/gi, "$1 $2");
 
 	let result = input;

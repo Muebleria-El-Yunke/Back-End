@@ -9,6 +9,7 @@ import { CloudinaryModule } from "business/photos/cloudinary/cloudinary.module";
 import { ImagesModule } from "business/photos/images/images.module";
 import { TypeOrmConfig } from "core/config/database/database.config";
 import { EnvModule } from "core/config/envs/env.module";
+import { AppSecure } from "core/config/security/security.config";
 import { InitModule } from "core/init/init.module";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
@@ -35,6 +36,6 @@ import { AppService } from "./app.service";
 		// TODO PaymentModule,
 	],
 	controllers: [AppController],
-	providers: [AppService],
+	providers: [...AppSecure, AppService],
 })
 export class AppModule {}

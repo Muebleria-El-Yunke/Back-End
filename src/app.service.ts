@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class AppService {
-	getServer(): string {
-		return "server ok!";
+	getServer() {
+		return { message: "server ok!", status: 200 };
 	}
 }
