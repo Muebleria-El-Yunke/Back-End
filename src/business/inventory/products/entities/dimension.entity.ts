@@ -15,7 +15,7 @@ export class Dimension {
 	@Column({ type: "decimal", precision: 8, scale: 2, nullable: false })
 	depth: number; // Profundidad en cm
 
-	@Column({ type: "varchar", length: 10, default: "cm" })
+	@Column({ length: 10, default: "cm" })
 	unit: string; // Unidad de medida
 
 	// * Relations

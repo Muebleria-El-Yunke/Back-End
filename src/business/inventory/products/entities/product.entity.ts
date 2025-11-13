@@ -16,10 +16,10 @@ export class Product {
 	@PrimaryGeneratedColumn("uuid")
 	id_product: string;
 
-	@Column({ type: "varchar", length: 255, nullable: false })
+	@Column({ length: 255, nullable: false })
 	title: string;
 
-	@Column({ type: "text", nullable: false })
+	@Column({ nullable: false })
 	description: string;
 
 	@Column({ type: "decimal", precision: 10, scale: 2, nullable: false })
@@ -43,7 +43,7 @@ export class Product {
 	@Column({ type: "boolean", default: false })
 	featured: boolean; // Producto destacado
 
-	@Column({ type: "varchar", length: 500, unique: true, nullable: true })
+	@Column({ length: 500, unique: true, nullable: true })
 	slug: string;
 
 	@CreateDateColumn()

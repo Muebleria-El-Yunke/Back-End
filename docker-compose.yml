@@ -1,15 +1,14 @@
 services:
   DataBase_ElYunke:
-    image: mysql:8.0
+    image: postgres:18
     restart: always
     env_file:
       - .env
     environment:
-      MYSQL_PASSWORD: ${PASSWORD_DB}
-      MYSQL_ROOT_PASSWORD: ${PASSWORD_DB}
-      MYSQL_DATABASE: ${NAME_DB}
-      MYSQL_USER: ${USERNAME_DB}
+      POSTGRES_PASSWORD: ${PASSWORD_DB}
+      POSTGRES_DB: ${NAME_DB}
+      POSTGRES_USER: ${USERNAME_DB}
     ports:
-      - "${PORT_DB:-3306}:3306"
+      - "${PORT_DB:-5432}:5432"
     volumes:
-      - ./db/data:/var/lib/mysql
+      - ./db:/var/lib/postgresql/18/docker

@@ -6,7 +6,7 @@ export const TypeOrmConfig: TypeOrmModuleAsyncOptions = {
 	imports: [EnvModule],
 	inject: [EnvService],
 	useFactory: async (envService: EnvService) => ({
-		type: "mysql",
+		type: "postgres",
 		host: envService.get("HOST_DB"),
 		port: envService.get("PORT_DB"),
 		username: envService.get("USERNAME_DB"),

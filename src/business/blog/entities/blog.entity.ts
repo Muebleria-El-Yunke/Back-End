@@ -11,19 +11,19 @@ export class Blog {
 	@PrimaryGeneratedColumn("uuid")
 	id_post: string;
 
-	@Column({ type: "varchar", length: 255 })
+	@Column({ length: 255 })
 	title: string;
 
-	@Column({ type: "varchar", length: 500, nullable: true })
+	@Column({ length: 500, nullable: true })
 	slug?: string;
 
-	@Column({ type: "text" })
+	@Column()
 	content: string;
 
-	@Column({ type: "varchar", length: 500, nullable: true })
+	@Column({ length: 500, nullable: true })
 	excerpt: string; // short summary
 
-	@Column({ type: "varchar", length: 500, nullable: true })
+	@Column({ length: 500, nullable: true })
 	category?: string;
 
 	@Column({ type: "simple-array", nullable: true })

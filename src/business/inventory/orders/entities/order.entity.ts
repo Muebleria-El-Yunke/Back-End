@@ -19,7 +19,7 @@
 // 	@PrimaryGeneratedColumn("uuid")
 // 	id: string;
 
-// 	@Column({ type: "varchar", length: 50, unique: true })
+// 	@Column({  length: 50, unique: true })
 // 	orderNumber: string; // Ej: "ORD-2024-001234"
 
 // 	@Column({ type: "uuid" })
@@ -46,23 +46,23 @@
 // 	total: number;
 
 // 	// Información de envío
-// 	@Column({ type: "varchar", length: 500 })
+// 	@Column({  length: 500 })
 // 	shippingAddress: string;
 
-// 	@Column({ type: "varchar", length: 100 })
+// 	@Column({  length: 100 })
 // 	shippingCity: string;
 
-// 	@Column({ type: "varchar", length: 50 })
+// 	@Column({  length: 50 })
 // 	shippingPostalCode: string;
 
-// 	@Column({ type: "varchar", length: 100 })
+// 	@Column({  length: 100 })
 // 	shippingCountry: string;
 
-// 	@Column({ type: "varchar", length: 20, nullable: true })
+// 	@Column({  length: 20, nullable: true })
 // 	shippingPhone: string;
 
 // 	// Notas adicionales
-// 	@Column({ type: "text", nullable: true })
+// 	@Column({  nullable: true })
 // 	notes: string;
 
 // 	@CreateDateColumn()
