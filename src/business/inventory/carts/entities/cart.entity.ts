@@ -19,7 +19,7 @@
 // 	@Column({ type: "uuid", nullable: true })
 // 	profileId: string;
 
-// 	@Column({ type: "varchar", length: 255, nullable: true, unique: true })
+// 	@Column({  length: 255, nullable: true, unique: true })
 // 	sessionId: string;
 
 // 	@Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
@@ -34,7 +34,7 @@
 // 	@Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
 // 	total: number;
 
-// 	@Column({ type: "boolean", default: true })
+// 	@Column({  default: true })
 // 	active: boolean;
 
 // 	@CreateDateColumn()

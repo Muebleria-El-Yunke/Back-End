@@ -16,16 +16,24 @@ export class Product {
 	@PrimaryGeneratedColumn("uuid")
 	id_product: string;
 
-	@Column({ type: "varchar", length: 255, nullable: false })
+	@Column({ length: 255, nullable: false })
 	title: string;
 
-	@Column({ type: "text", nullable: false })
+	@Column({ nullable: false })
 	description: string;
 
 	@Column({ type: "decimal", precision: 10, scale: 2, nullable: false })
 	price: number;
 
-	@Column({ type: "enum", enum: Category, nullable: false })
+	@Column({
+		type: "nvarchar",
+		length: 20,
+		nullable: false,
+		transformer: {
+			to: (value: Category) => value,
+			from: (value: string) => value as Category,
+		},
+	})
 	category: Category;
 
 	@Column({ type: "int", default: 0 })
@@ -37,13 +45,13 @@ export class Product {
 	@Column({ type: "simple-array", nullable: true })
 	imageIds: string[]; // Array de IDs de imágenes
 
-	@Column({ type: "boolean", default: true })
+	@Column({ default: true })
 	active: boolean;
 
-	@Column({ type: "boolean", default: false })
+	@Column({ default: false })
 	featured: boolean; // Producto destacado
 
-	@Column({ type: "varchar", length: 500, unique: true, nullable: true })
+	@Column({ length: 500, unique: true, nullable: true })
 	slug: string;
 
 	@CreateDateColumn()

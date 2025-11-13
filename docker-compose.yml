@@ -1,15 +1,28 @@
 services:
-  DataBase_ElYunke:
-    image: mysql:8.0
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    user: "0:0"
     restart: always
     env_file:
-      - .env.dev
+      - .env
     environment:
-      MYSQL_PASSWORD: ${PASSWORD_DB}
-      MYSQL_ROOT_PASSWORD: ${PASSWORD_DB}
-      MYSQL_DATABASE: ${NAME_DB}
-      MYSQL_USER: ${USERNAME_DB}
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${PASSWORD_DB}
+      - DB_NAME=${NAME_DB}
+      - MSSQL_PID=Developer
+      - DB_HOST=${HOST_DB}
     ports:
-      - "${PORT_DB:-3306}:3306"
+      - "${PORT_DB:-1433}:1433"
     volumes:
-      - ./db/data:/var/lib/mysql
+      - sqlserver_data:/var/opt/mssql
+    command:
+      - /bin/bash
+      - -c
+      - |
+        /opt/mssql/bin/sqlservr &
+        sleep 30
+        /opt/mssql-tools18/bin/sqlcmd -S "$$DB_HOST" -U sa -P "$$SA_PASSWORD" -C -Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = '$$DB_NAME') CREATE DATABASE [$$DB_NAME]"
+        wait
+
+volumes:
+  sqlserver_data:

@@ -17,10 +17,14 @@ export class User {
 	user_name: string;
 
 	@Column({
-		type: "enum",
-		enum: ROLE,
+		type: "nvarchar",
+		length: 20,
 		default: ROLE.BUYER,
 		nullable: true,
+		transformer: {
+			to: (value: ROLE) => value,
+			from: (value: string) => value as ROLE,
+		},
 	})
 	role: ROLE;
 

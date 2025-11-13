@@ -15,7 +15,15 @@ export class Image {
 	url: string;
 
 	// * Polymorphic relations
-	@Column({ nullable: true, enum: PhotoOfEnum, type: "enum" })
+	@Column({
+		type: "nvarchar",
+		length: 20,
+		nullable: true,
+		transformer: {
+			to: (value: PhotoOfEnum) => value,
+			from: (value: string) => value as PhotoOfEnum,
+		},
+	})
 	photoOf: PhotoOfEnum;
 
 	@Column({ type: "uuid", nullable: true })

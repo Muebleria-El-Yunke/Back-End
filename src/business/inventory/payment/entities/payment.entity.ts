@@ -51,14 +51,14 @@
 // 	@Column({ type: "decimal", precision: 10, scale: 2 })
 // 	amount: number;
 
-// 	@Column({ type: "varchar", length: 10, default: "ARS" })
+// 	@Column({  length: 10, default: "ARS" })
 // 	currency: string;
 
 // 	// IDs externos de la pasarela de pago
-// 	@Column({ type: "varchar", length: 255, nullable: true })
+// 	@Column({  length: 255, nullable: true })
 // 	externalPaymentId: string; // ID de MercadoPago, Stripe, etc.
 
-// 	@Column({ type: "varchar", length: 255, nullable: true })
+// 	@Column({  length: 255, nullable: true })
 // 	externalPreferenceId: string; // ID de preferencia de pago
 
 // 	// Metadata adicional de la pasarela
@@ -69,7 +69,7 @@
 // 	@Column({ type: "timestamp", nullable: true })
 // 	paidAt: Date;
 
-// 	@Column({ type: "text", nullable: true })
+// 	@Column({  nullable: true })
 // 	failureReason: string;
 
 // 	@CreateDateColumn()

@@ -22,7 +22,7 @@
 // 	productId: string;
 
 // 	// Información del producto en el momento de la compra
-// 	@Column({ type: "varchar", length: 255 })
+// 	@Column({  length: 255 })
 // 	productTitle: string;
 
 // 	@Column({ type: "int" })

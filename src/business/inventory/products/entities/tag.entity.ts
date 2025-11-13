@@ -6,10 +6,10 @@ export class Tag {
 	@PrimaryGeneratedColumn("uuid")
 	id: string;
 
-	@Column({ type: "varchar", length: 100, nullable: false })
+	@Column({ length: 100, nullable: false })
 	name: string;
 
-	@Column({ type: "varchar", length: 7, nullable: true })
+	@Column({ length: 7, nullable: true })
 	color: string; // Color hex para la etiqueta (ej: #FF5733)
 
 	// * Relations
