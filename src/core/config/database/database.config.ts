@@ -6,7 +6,27 @@ export const TypeOrmConfig: TypeOrmModuleAsyncOptions = {
 	imports: [EnvModule],
 	inject: [EnvService],
 	useFactory: async (envService: EnvService) => {
-		const sslConfig = envService.inProduction()
+		const isProduction = envService.inProduction();
+		const databaseUrl = envService.get("DATABASE_URL");
+
+		let dbConfig: any;
+		if (databaseUrl) {
+			console.log("📦 Using DATABASE_URL for connection");
+			dbConfig = {
+				url: databaseUrl,
+			};
+		} else {
+			console.log("📦 Using individual DB credentials");
+			dbConfig = {
+				host: envService.get("HOST_DB"),
+				port: envService.get("PORT_DB"),
+				username: envService.get("USERNAME_DB"),
+				password: envService.get("PASSWORD_DB"),
+				database: envService.get("NAME_DB"),
+			};
+		}
+
+		const sslConfig = isProduction
 			? {
 					ssl: true,
 					extra: {
@@ -17,24 +37,29 @@ export const TypeOrmConfig: TypeOrmModuleAsyncOptions = {
 				}
 			: {};
 
+		console.log("🔧 Database Configuration:");
+		console.log(`   Environment: ${envService.get("NODE_ENV")}`);
+		console.log(`   Using DATABASE_URL: ${!!databaseUrl}`);
+		console.log(`   SSL Enabled: ${isProduction}`);
+
 		return {
 			type: "postgres",
-			host: envService.get("HOST_DB"),
-			port: envService.get("PORT_DB"),
-			username: envService.get("USERNAME_DB"),
-			password: envService.get("PASSWORD_DB"),
-			database: envService.get("NAME_DB"),
+			...dbConfig,
 
-			// Let TypeORM auto-discover entities from modules
+			// Use autoLoadEntities for automatic entity discovery
 			autoLoadEntities: true,
 
-			// Synchronize schema in development
-			synchronize: !envService.inProduction(),
+			// NEVER synchronize in production
+			synchronize: !isProduction,
 
-			// Enable logging to debug
-			logging: !envService.inProduction() ? ["query", "error", "schema"] : ["error"],
+			// Logging
+			logging: !isProduction ? ["query", "error", "schema"] : ["error"],
 
-			entities: [`${__dirname}/../../../../entities/*.entity{.ts,.js}`],
+			// Connection pool settings for production
+			...(isProduction && {
+				poolSize: 10,
+				connectTimeoutMS: 10000,
+			}),
 
 			...sslConfig,
 		};
