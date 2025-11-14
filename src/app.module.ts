@@ -19,6 +19,7 @@ import { AppService } from "./app.service";
 		// * Config
 		EnvModule,
 		TypeOrmModule.forRootAsync(TypeOrmConfig),
+
 		InitModule,
 		ImagesModule,
 		CloudinaryModule,
