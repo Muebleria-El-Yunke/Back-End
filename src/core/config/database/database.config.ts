@@ -14,6 +14,6 @@ export const TypeOrmConfig: TypeOrmModuleAsyncOptions = {
 		database: envService.get("NAME_DB"),
 		entities: [`${__dirname}/../../../**/*.entity{.ts,.js}`],
 		synchronize: !envService.inProduction(),
-		autoLoadEntities: !envService.inProduction(),
+		autoLoadEntities: true,
 	}),
 };
