@@ -13,7 +13,7 @@ export const TypeOrmConfig: TypeOrmModuleAsyncOptions = {
 		password: envService.get("PASSWORD_DB"),
 		database: envService.get("NAME_DB"),
 		entities: [`${__dirname}/../../../**/*.entity{.ts,.js}`],
-		synchronize: true, // Force enable to create tables
+		synchronize: !envService.inProduction(),
 		autoLoadEntities: true,
 	}),
 };
