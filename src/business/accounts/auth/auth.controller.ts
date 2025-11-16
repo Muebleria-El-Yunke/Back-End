@@ -18,6 +18,7 @@ import { LoginUserDto } from "./dto/login-user.dto";
 import { RegisterAuthDto } from "./dto/register-user.dto";
 import { JwtAuthGuard } from "./guard/jwt-auth.guard";
 import { AuthInterface } from "./interface/auth.interface";
+import { Admin } from "./decorators/index.decorator";
 
 @Controller("auth")
 export class AuthController {
@@ -48,6 +49,7 @@ export class AuthController {
 		};
 	}
 
+	@Admin()
 	@Post("register")
 	@HttpCode(HttpStatus.CREATED)
 	@Throttle({ default: { limit: 5, ttl: 60000 * 5 } }) // 5 intentos por 5 minutos
