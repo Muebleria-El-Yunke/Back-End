@@ -6,7 +6,6 @@ import { EnvService } from "./env.service";
 	imports: [
 		ConfigModule.forRoot({
 			isGlobal: true,
-			envFilePath: process.env.NODE_ENV === "production" ? ".env" : ".env.dev",
 		}),
 	],
 	providers: [EnvService],
