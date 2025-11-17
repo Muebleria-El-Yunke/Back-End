@@ -3,7 +3,7 @@ DOCKER_COMPOSE := $(firstword $(wildcard docker-compose.yaml docker-compose.yml)
 
 .PHONY: reset-db create-db check-docker-compose
 
-create-db: ckeck-docker-compose
+create-db: check-docker-compose
 	sudo docker compose up -d
 
 reset-db: check-docker-compose
