@@ -1,12 +1,16 @@
 # Buscar el archivo de docker-compose
 DOCKER_COMPOSE := $(firstword $(wildcard docker-compose.yaml docker-compose.yml))
 
-.PHONY: recreate-db check-docker-compose
+.PHONY: reset-db create-db check-docker-compose
 
-recreate-db: check-docker-compose
+create-db: ckeck-docker-compose
+	sudo docker compose up -d
+
+reset-db: check-docker-compose
 	sudo docker compose down -v
 	@sudo rm -rf db
-	sudo docker compose up -d
+	$(MAKE) create-db
+
 
 check-docker-compose:
 ifeq ($(DOCKER_COMPOSE),)
