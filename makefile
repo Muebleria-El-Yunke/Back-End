@@ -16,6 +16,3 @@ check-docker-compose:
 ifeq ($(DOCKER_COMPOSE),)
 	@echo "Error: No se encontró docker-compose.yaml ni docker-compose.yml"
 	@exit 1
-else
-	@echo "Usando archivo: $(DOCKER_COMPOSE)"
-endif
