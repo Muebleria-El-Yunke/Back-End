@@ -2,14 +2,14 @@ import {
 	Column,
 	CreateDateColumn,
 	Entity,
+	JoinColumn,
 	OneToMany,
 	OneToOne,
 	PrimaryGeneratedColumn,
 	UpdateDateColumn,
 } from "typeorm";
 import { Category } from "../enum/category.enum";
-import { Dimension } from "./dimension.entity";
-import { Tag } from "./tag.entity";
+import { Dimension, Tag } from "./index.entity";
 
 @Entity("products")
 export class Product {
@@ -22,54 +22,78 @@ export class Product {
 	@Column({ type: "text", nullable: false })
 	description: string;
 
-	@Column({ type: "decimal", precision: 10, scale: 2, nullable: false })
+	@Column({
+		type: "decimal",
+		precision: 10,
+		scale: 2,
+		nullable: false,
+		transformer: {
+			to: (value: number) => value,
+			from: (value: string) => parseFloat(value),
+		},
+	})
 	price: number;
 
 	@Column({ type: "enum", enum: Category, nullable: false })
 	category: Category;
 
-	@Column({ type: "int", default: 0 })
-	stock: number;
-
-	@Column({ type: "decimal", precision: 8, scale: 2, nullable: false })
+	@Column({
+		type: "decimal",
+		precision: 8,
+		scale: 2,
+		nullable: false,
+		transformer: {
+			to: (value: number) => value,
+			from: (value: string) => parseFloat(value),
+		},
+	})
 	weight: number;
-
-	@Column({ type: "simple-array", nullable: true })
-	imageIds: string[]; // Array de IDs de imágenes
 
 	@Column({ type: "boolean", default: true })
 	active: boolean;
 
 	@Column({ type: "boolean", default: false })
-	featured: boolean; // Producto destacado
+	featured: boolean;
 
-	@Column({ type: "varchar", length: 500, unique: true, nullable: true })
-	slug: string;
+	// Array de UUIDs de imágenes - CORRECCIÓN CRÍTICA
+	@Column({ type: "simple-array", nullable: true })
+	id_images: string[];
 
-	@CreateDateColumn()
+	@CreateDateColumn({ name: "created_at" })
 	createdAt: Date;
 
-	@UpdateDateColumn()
+	@UpdateDateColumn({ name: "updated_at" })
 	updatedAt: Date;
 
 	// * Relations
 	@OneToOne(
 		() => Dimension,
 		(dimension) => dimension.product,
-		{ cascade: true, eager: true },
+		{
+			cascade: true,
+			eager: false, // Cambiar a false para mejor performance
+			onDelete: "CASCADE",
+		},
 	)
+	@JoinColumn({ name: "dimension_id" })
 	dimension: Dimension;
 
 	@OneToMany(
 		() => Tag,
 		(tag) => tag.product,
-		{ cascade: ["remove", "insert", "update"], eager: true },
+		{
+			cascade: ["insert", "update", "remove"],
+			eager: false, // Cambiar a false, cargar cuando sea necesario
+			onDelete: "CASCADE",
+		},
 	)
 	tags: Tag[];
 
-	// @OneToMany(
-	// 	() => CartItem,
-	// 	(cartItem) => cartItem.product,
-	// )
-	// CartsItems: CartItem;
+	// * Métodos útiles
+	/**
+	 * Calcula el precio con descuento
+	 */
+	getPriceWithDiscount(discountPercentage: number): number {
+		return this.price * (1 - discountPercentage / 100);
+	}
 }

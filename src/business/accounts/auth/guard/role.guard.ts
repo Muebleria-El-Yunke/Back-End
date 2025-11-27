@@ -51,10 +51,6 @@ export class RolesGuard implements CanActivate {
 
 		if (!requiredRoles.includes(user.role)) {
 			// Log de intento de acceso no autorizado
-			this.logger.warn(
-				`Access denied for user ${user.id_user} with role ${user.role} to ${request.path}. Required: ${requiredRoles.join(", ")}`,
-			);
-
 			throw new ForbiddenException(
 				`Insufficient permissions. Required roles: ${requiredRoles.join(", ")}`,
 			);

@@ -1,13 +1,15 @@
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import cookieParser from "cookie-parser";
 import express from "express";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { EnvService } from "./core/config/envs/env.service";
+import { SwaggerConfig } from "core/config/swagger/swagger.config";
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
+	const logger = new Logger("NestApplication");
 
 	// Obtener EnvService
 	const envService = app.get(EnvService);
@@ -59,10 +61,25 @@ async function bootstrap() {
 		}),
 	);
 
-	// * Global Prefix
+	// Global Prefix
 	app.setGlobalPrefix("api/v1");
 
+	// Configuración de Swagger
+	const isProduction = envService.inProduction();
+
 	const port = envService.get("PORT") || 3000;
+	if (!isProduction) {
+		SwaggerConfig.setup(app, {
+			title: "API Documentation",
+			description: "Documentación completa de la API REST",
+			version: "1.0.0",
+			apiPrefix: "api/docs",
+		});
+		setTimeout(
+			() => logger.localInstance.log(`Api Swagger: http://localhost:${port}/api/docs`),
+			200,
+		);
+	}
 
 	await app.listen(port);
 }

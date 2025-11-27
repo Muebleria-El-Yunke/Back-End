@@ -9,6 +9,7 @@ create-db: check-docker-compose
 reset-db: check-docker-compose
 	@sudo docker compose down -v
 	@sudo rm -rf db
+	@rm -rf dist
 	$(MAKE) create-db
 
 

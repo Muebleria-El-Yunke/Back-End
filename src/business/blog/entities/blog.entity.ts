@@ -43,6 +43,6 @@ export class Blog {
 
 	// * Relations
 	// TODO Products:
-	@Column({ type: "uuid", nullable: true })
+	@Column({ type: "uuid", nullable: true, select: false })
 	id_images: string[];
 }

@@ -33,17 +33,10 @@ export class JwtAuthGuard extends AuthGuard(JWT_AUTH_GUARD) {
 	handleRequest<TUser = any>(
 		err: Error | null,
 		user: TUser | false,
-		info: any,
-		context: ExecutionContext,
+		_info: any,
+		_context: ExecutionContext,
 	): TUser {
-		const request = context.switchToHttp().getRequest();
-
 		if (err || !user) {
-			// Log de seguridad sin exponer datos sensibles
-			this.logger.warn(
-				`Authentication failed for ${request.method} ${request.path} from IP: ${request.ip}`,
-			);
-
 			throw (
 				err ||
 				new UnauthorizedException("Authentication required. Please login to access this resource.")

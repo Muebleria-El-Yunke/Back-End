@@ -1,396 +1,193 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Repository, FindManyOptions } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
-import { PhotoOfEnum } from "business/common/photo.type";
-import { Image } from "business/photos/images/entities/image.entity";
-import { ImagesService } from "business/photos/images/images.service";
 import { PaginationDto } from "core/dto/pagination.dto";
-import { PaginationOptions } from "core/utils/paginatioFindAll";
-import { FindManyOptions, MoreThan, Repository } from "typeorm";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
-import { Dimension } from "./entities/dimension.entity";
-import { Product } from "./entities/product.entity";
-import { Tag } from "./entities/tag.entity";
+import { Product } from "./entities/index.entity";
 import { Category } from "./enum/category.enum";
+import { ProductImagesManager } from "./helpers/product-images.manager";
+import { ProductQueryBuilder } from "./helpers/product-query.builder";
+import { ProductFactoryService } from "./helpers/product-factory.service";
+import { getPaginationOptions } from "core/utils/paginatioFindAll";
+import { ImageOrderDto } from "./dto/image-order.dto";
 
 @Injectable()
 export class ProductsService {
+	private readonly logger = new Logger(ProductsService.name);
+
 	constructor(
 		@InjectRepository(Product)
 		private readonly productRepository: Repository<Product>,
-		@InjectRepository(Dimension)
-		private readonly dimensionRepository: Repository<Dimension>,
-		@InjectRepository(Tag)
-		private readonly tagRepository: Repository<Tag>,
-		private readonly imagesService: ImagesService,
+		private readonly imagesManager: ProductImagesManager,
+		private readonly queryBuilder: ProductQueryBuilder,
+		private readonly factoryService: ProductFactoryService,
 	) {}
 
-	async create(createProductDto: CreateProductDto) {
-		// Generar slug si no se proporciona
-		if (!createProductDto.slug && createProductDto.title) {
-			createProductDto.slug = await this.#generateUniqueSlug(createProductDto.title);
-		}
+	// ========== CRUD Básico ==========
+	async create(createProductDto: CreateProductDto, photos?: Express.Multer.File[] | string[]) {
+		const queryRunner = this.productRepository.manager.connection.createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
 
-		// Crear producto
-		const product = this.productRepository.create({
-			title: createProductDto.title,
-			description: createProductDto.description,
-			price: createProductDto.price,
-			category: createProductDto.category,
-			stock: createProductDto.stock,
-			weight: createProductDto.weight,
-			imageIds: createProductDto.imageIds,
-			active: createProductDto.active,
-			featured: createProductDto.featured,
-			slug: createProductDto.slug,
-		});
-
-		const savedProduct = await this.productRepository.save(product);
-
-		// Crear dimensiones si existen
-		if (createProductDto.dimension) {
-			const dimension = this.dimensionRepository.create({
-				...createProductDto.dimension,
-				product: savedProduct,
-			});
-			await this.dimensionRepository.save(dimension);
-		}
-
-		// Crear tags si existen
-		if (createProductDto.tags && createProductDto.tags.length > 0) {
-			const tags = createProductDto.tags.map((tagDto) =>
-				this.tagRepository.create({
-					name: tagDto.name,
-					color: tagDto.color,
-					product: savedProduct,
-				}),
+		try {
+			const product = await this.factoryService.createProductWithRelations(
+				queryRunner,
+				createProductDto,
 			);
-			await this.tagRepository.save(tags);
-		}
 
-		return this.findOne(savedProduct.id_product);
+			await queryRunner.commitTransaction();
+
+			this.imagesManager.processImagesAsync(product.id_product, photos);
+
+			return this.findOne(product.id_product);
+		} catch (error) {
+			await queryRunner.rollbackTransaction();
+			this.logger.error(`Error creando producto: ${error.message}`, error.stack);
+			throw error;
+		} finally {
+			await queryRunner.release();
+		}
 	}
 
 	async findAll(paginationDto?: PaginationDto) {
-		return this.#findProductsWithOptions({ order: { createdAt: "DESC" } }, paginationDto);
+		const options = this.queryBuilder.getDefaultOptions();
+		return this.executeQueryWithEnrichment(options, paginationDto);
 	}
 
 	async findActive(paginationDto?: PaginationDto) {
-		return this.#findProductsWithOptions(
-			{
-				where: { active: true },
-				order: { createdAt: "DESC" },
-			},
-			paginationDto,
-		);
+		return this.executeQueryWithEnrichment(this.queryBuilder.getActiveOptions(), paginationDto);
 	}
 
 	async findFeatured(paginationDto?: PaginationDto) {
-		return this.#findProductsWithOptions(
-			{
-				where: { active: true, featured: true },
-				order: { createdAt: "DESC" },
-			},
-			paginationDto,
-		);
+		return this.executeQueryWithEnrichment(this.queryBuilder.getFeaturedOptions(), paginationDto);
 	}
 
 	async findByCategory(category: Category, paginationDto?: PaginationDto) {
-		return this.#findProductsWithOptions(
-			{
-				where: { category, active: true },
-				order: { createdAt: "DESC" },
-			},
+		return this.executeQueryWithEnrichment(
+			this.queryBuilder.getCategoryOptions(category),
 			paginationDto,
 		);
 	}
+
 	async findInStock(paginationDto?: PaginationDto) {
-		return this.#findProductsWithOptions(
-			{
-				where: { active: true, stock: MoreThan(0) },
-				order: { createdAt: "DESC" },
-			},
-			paginationDto,
-		);
-	}
-
-	async findBySlug(slug: string) {
-		const product = await this.productRepository.findOne({
-			where: { slug },
-			relations: ["dimension", "tags"],
-		});
-
-		if (!product) {
-			throw new NotFoundException(`Producto con slug ${slug} no encontrado`);
-		}
-
-		const enriched = await this.#enrichProductsWithImages([product]);
-		return enriched[0];
+		return this.executeQueryWithEnrichment(this.queryBuilder.getInStockOptions(), paginationDto);
 	}
 
 	async findOne(id_product: string) {
-		const product = await this.productRepository.findOne({
-			where: { id_product },
-			relations: ["dimension", "tags"],
-		});
-
-		if (!product) {
-			throw new NotFoundException(`Producto con ID ${id_product} no encontrado`);
-		}
-
-		// Enriquecer con imágenes ordenadas
-		const enriched = await this.#enrichProductsWithImages([product]);
-		return enriched[0];
+		const product = await this.getProductOrFail(id_product, ["dimension", "tags"]);
+		return this.imagesManager.enrichProductWithImages(product);
 	}
-	async update(id_product: string, updateProductDto: UpdateProductDto) {
-		const product = await this.findOne(id_product);
 
-		// Actualizar slug si se cambia el título
-		if (
-			updateProductDto.title &&
-			!updateProductDto.slug &&
-			updateProductDto.title !== product.title
-		) {
-			updateProductDto.slug = await this.#generateUniqueSlug(updateProductDto.title, id_product);
+	async update(
+		id_product: string,
+		updateProductDto: UpdateProductDto,
+		photos?: Express.Multer.File[] | string[],
+	) {
+		const queryRunner = this.productRepository.manager.connection.createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
+
+		try {
+			const product = await this.getProductOrFail(id_product, ["dimension", "tags"]);
+
+			await this.factoryService.updateProductWithRelations(queryRunner, product, updateProductDto);
+			await queryRunner.commitTransaction();
+
+			this.imagesManager.processImagesAsync(id_product, photos);
+
+			return this.findOne(id_product);
+		} catch (error) {
+			await queryRunner.rollbackTransaction();
+			this.logger.error(`Error actualizando producto ${id_product}: ${error.message}`, error.stack);
+			throw error;
+		} finally {
+			await queryRunner.release();
 		}
-
-		// Actualizar producto
-		Object.assign(product, {
-			title: updateProductDto.title ?? product.title,
-			description: updateProductDto.description ?? product.description,
-			price: updateProductDto.price ?? product.price,
-			category: updateProductDto.category ?? product.category,
-			stock: updateProductDto.stock ?? product.stock,
-			weight: updateProductDto.weight ?? product.weight,
-			imageIds: updateProductDto.imageIds ?? product.imageIds,
-			active: updateProductDto.active ?? product.active,
-			featured: updateProductDto.featured ?? product.featured,
-			slug: updateProductDto.slug ?? product.slug,
-		});
-
-		await this.productRepository.save(product);
-
-		// Actualizar dimensiones
-		if (updateProductDto.dimension && product.dimension) {
-			Object.assign(product.dimension, updateProductDto.dimension);
-			await this.dimensionRepository.save(product.dimension);
-		} else if (updateProductDto.dimension && !product.dimension) {
-			const dimension = this.dimensionRepository.create({
-				...updateProductDto.dimension,
-				product,
-			});
-			await this.dimensionRepository.save(dimension);
-		}
-
-		// Actualizar tags
-		if (updateProductDto.tags) {
-			// Eliminar tags existentes
-			await this.tagRepository.delete({ product: { id_product } });
-
-			// Crear nuevos tags
-			if (updateProductDto.tags.length > 0) {
-				const tags = updateProductDto.tags.map((tagDto) =>
-					this.tagRepository.create({
-						name: tagDto.name,
-						color: tagDto.color,
-						product,
-					}),
-				);
-				await this.tagRepository.save(tags);
-			}
-		}
-
-		return this.findOne(id_product);
 	}
 
 	async remove(id_product: string): Promise<void> {
-		const product = await this.findOne(id_product);
-
-		// Eliminar imágenes asociadas
-		await this.imagesService.deleteRelation(
-			id_product,
-			PhotoOfEnum.PRODUCTS,
-			false, // No lanzar error si no hay imágenes
-		);
-
+		const product = await this.getProductOrFail(id_product);
+		await this.imagesManager.deleteAllImages(id_product);
 		await this.productRepository.remove(product);
 	}
 
-	async toggleActive(id: string) {
-		const product = await this.findOne(id);
+	// ========== Toggles ==========
+	async toggleActive(id_product: string): Promise<Product> {
+		const product = await this.getProductOrFail(id_product);
 		product.active = !product.active;
-		return await this.productRepository.save(product);
+		return this.productRepository.save(product);
 	}
 
-	async toggleFeatured(id: string) {
-		const product = await this.findOne(id);
+	async toggleFeatured(id_product: string): Promise<Product> {
+		const product = await this.getProductOrFail(id_product);
 		product.featured = !product.featured;
-		return await this.productRepository.save(product);
+		return this.productRepository.save(product);
 	}
 
-	async updateStock(id: string, quantity: number) {
-		const product = await this.findOne(id);
-		product.stock = quantity;
-		return await this.productRepository.save(product);
-	}
-
-	async decrementStock(id: string, quantity: number) {
-		const product = await this.findOne(id);
-
-		if (product.stock < quantity) {
-			throw new NotFoundException(`Stock insuficiente. Disponible: ${product.stock}`);
-		}
-
-		product.stock -= quantity;
-		return await this.productRepository.save(product);
-	}
-
-	async incrementStock(id: string, quantity: number) {
-		const product = await this.findOne(id);
-		product.stock += quantity;
-		return await this.productRepository.save(product);
-	}
-
-	// Métodos para gestionar imágenes del producto
+	// ========== Gestión de Imágenes ==========
 	async getProductImages(id_product: string) {
-		return await this.imagesService.findRelationsByIdOrdered({
-			photoOf: PhotoOfEnum.PRODUCTS,
-			id_relation: id_product,
-		});
+		await this.getProductOrFail(id_product);
+		return this.imagesManager.getProductImages(id_product);
 	}
 
 	async addProductImages(id_product: string, photos: Express.Multer.File[] | string[]) {
-		// Verificar que el producto existe
-		await this.findOne(id_product);
-
-		return await this.imagesService.createManyImages(photos, PhotoOfEnum.PRODUCTS, id_product);
+		await this.getProductOrFail(id_product);
+		return this.imagesManager.addImages(id_product, photos);
 	}
 
-	async reorderProductImages(
-		id_product: string,
-		imageOrders: { id_image: string; order: number }[],
-	) {
-		// Verificar que el producto existe
-		await this.findOne(id_product);
-
-		return await this.imagesService.reorderImages(id_product, PhotoOfEnum.PRODUCTS, imageOrders);
+	async reorderProductImages(id_product: string, imageOrders: ImageOrderDto[]) {
+		await this.getProductOrFail(id_product);
+		return this.imagesManager.reorderImages(id_product, imageOrders);
 	}
 
 	async deleteProductImage(id_product: string, id_image: string) {
-		// Verificar que el producto existe
-		await this.findOne(id_product);
+		await this.getProductOrFail(id_product);
+		return this.imagesManager.deleteImage(id_product, id_image);
+	}
 
-		const image = (await this.imagesService.findOneById({
-			id_image,
-			photoOf: PhotoOfEnum.PRODUCTS,
-		})) as Image;
-
-		if (image.id_relation !== id_product) {
-			throw new NotFoundException(`La imagen no pertenece al producto con ID ${id_product}`);
-		}
-
-		return await this.imagesService.delete({
-			photoOf: PhotoOfEnum.PRODUCTS,
-			id_relation: id_product,
+	// ========== Private Methods ==========
+	private async getProductOrFail(id_product: string, relations: string[] = []): Promise<Product> {
+		const product = await this.productRepository.findOne({
+			where: { id_product },
+			relations,
 		});
-	}
 
-	// ! Private
-	async #enrichProductsWithImages(products: Product[]): Promise<Product[]> {
-		const enrichedProducts = await Promise.all(
-			products.map(async (product) => {
-				const images = await this.imagesService.findRelationsByIdOrdered({
-					photoOf: PhotoOfEnum.PRODUCTS,
-					id_relation: product.id_product,
-				});
-
-				return {
-					...product,
-					images: images.map((img) => ({
-						id_image: img.id_image,
-						url: img.url,
-						order: img.order,
-					})),
-				};
-			}),
-		);
-
-		return enrichedProducts as Product[];
-	}
-
-	async #generateUniqueSlug(title: string, excludeId?: string): Promise<string> {
-		const slug = this.#slugify(title);
-		let counter = 1;
-		let uniqueSlug = slug;
-
-		while (true) {
-			const existing = await this.productRepository.findOne({ where: { slug: uniqueSlug } });
-
-			if (!existing || existing.id_product === excludeId) {
-				break;
-			}
-
-			uniqueSlug = `${slug}-${counter}`;
-			counter++;
+		if (!product) {
+			throw new NotFoundException(`Producto con ID "${id_product}" no encontrado`);
 		}
 
-		return uniqueSlug;
+		return product;
 	}
 
-	#slugify(text: string): string {
-		return text
-			.toLowerCase()
-			.normalize("NFD")
-			.replace(/[\u0300-\u036f]/g, "")
-			.replace(/[^\w\s-]/g, "")
-			.replace(/\s+/g, "-")
-			.replace(/-+/g, "-")
-			.trim();
-	}
-
-	async #findProductsWithOptions(
-		options: FindManyOptions<Product>,
-		paginationOptions?: PaginationOptions,
+	private async executeQueryWithEnrichment(
+		queryOptions: FindManyOptions<Product>,
+		paginationDto?: PaginationDto,
 	) {
-		if (!paginationOptions) {
-			const products = await this.productRepository.find(options);
-			return this.#enrichProductsWithImages(products);
-		}
+		if (paginationDto) {
+			// Apply pagination to query options
+			const paginatedOptions = getPaginationOptions(paginationDto, queryOptions);
 
-		// Con paginación: retorna resultado estructurado
-		const { page, limit } = paginationOptions;
+			// Execute query with pagination - findAndCount returns [items, total]
+			const [products, total] = await this.productRepository.findAndCount(paginatedOptions);
 
-		if (page < 1)
-			// Normalizar valores (sin lanzar errores)
-			throw new Error("El número de página debe ser mayor o igual a 1");
-		if (limit < 1) throw new Error("El límite debe ser mayor o igual a 1");
-		if (limit > 100) throw new Error("El límite no puede exceder 100 elementos");
+			// Enrich products with images
+			const enriched = await this.imagesManager.enrichProductsWithImages(products);
 
-		const skip = (page - 1) * limit;
-
-		// Ejecutar consulta con paginación y obtener total
-		const [products, total] = await this.productRepository.findAndCount({
-			...options,
-			skip,
-			take: limit,
-		});
-
-		// Enriquecer productos con imágenes
-		const enrichedProducts = await this.#enrichProductsWithImages(products);
-
-		// Calcular metadatos
-		const totalPages = Math.ceil(total / limit);
-
-		return {
-			data: enrichedProducts,
-			meta: {
+			// Build meta information
+			const { page, limit } = paginationDto;
+			const meta = {
 				total,
 				page,
 				limit,
-				totalPages,
-				hasNextPage: page < totalPages,
-				hasPreviousPage: page > 1,
-			},
-		};
+				totalPages: Math.ceil(total / limit),
+			};
+
+			return { data: enriched, meta };
+		}
+
+		// Without pagination, return all products
+		const products = await this.productRepository.find(queryOptions);
+		return this.imagesManager.enrichProductsWithImages(products);
 	}
 }

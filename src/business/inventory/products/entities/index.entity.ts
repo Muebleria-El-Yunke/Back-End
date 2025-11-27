@@ -3,4 +3,6 @@ import { Dimension } from "./dimension.entity";
 import { Product } from "./product.entity";
 import { Tag } from "./tag.entity";
 
-export const EntitySchemaProduct: EntityClassOrSchema[] | undefined = [Product, Tag, Dimension];
+export const EntitySchemaProduct: EntityClassOrSchema[] = [Product, Tag, Dimension];
+
+export { Tag, Dimension, Product };

@@ -37,7 +37,6 @@ export class AuthService {
 
 	async refreshToken(user: AuthInterface) {
 		if (!user || !user.id_user || !user.role) {
-			this.logger.warn("Invalid user data for token refresh");
 			throw new UnauthorizedException("Invalid user data");
 		}
 		try {
@@ -55,14 +54,12 @@ export class AuthService {
 				role: payload.role,
 			};
 		} catch (error) {
-			this.logger.warn(`Token verification failed: ${error.message}`);
-			return null;
+			throw error();
 		}
 	}
 
 	#generateToken(user: AuthInterface) {
 		if (!user || !user.id_user || !user.role) {
-			this.logger.warn("Invalid user data for token generation");
 			return null;
 		}
 
@@ -71,6 +68,6 @@ export class AuthService {
 			role: user.role,
 		};
 
-		return { id_user: user.id_user, role: user.role, AccessToken: this.jwtService.sign(payload) };
+		return { ...payload, AccessToken: this.jwtService.sign(payload) };
 	}
 }
