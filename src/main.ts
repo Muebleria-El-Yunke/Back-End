@@ -41,9 +41,10 @@ async function bootstrap() {
 	app.use(cookieParser());
 
 	// CORS configurado de forma segura
+	const frontendUrl = envService.get("FRONTEND_URL") || "http://localhost:4200";
 	app.enableCors({
-		origin: envService.get("FRONTEND_URL") || "http://localhost:4200",
-		credentials: true, // Necesario para cookies httpOnly
+		origin: frontendUrl.split(",").map((url) => url.trim()), // Permite múltiples orígenes
+		credentials: true,
 		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],
 		exposedHeaders: ["Set-Cookie"],
@@ -52,9 +53,9 @@ async function bootstrap() {
 	// Validación global
 	app.useGlobalPipes(
 		new ValidationPipe({
-			whitelist: true, // Elimina propiedades no definidas en DTOs
-			forbidNonWhitelisted: true, // Rechaza requests con propiedades extra
-			transform: true, // Transforma payloads a instancias de DTOs
+			whitelist: true,
+			forbidNonWhitelisted: true,
+			transform: true,
 			transformOptions: {
 				enableImplicitConversion: true,
 			},
@@ -66,8 +67,8 @@ async function bootstrap() {
 
 	// Configuración de Swagger
 	const isProduction = envService.inProduction();
-
 	const port = envService.get("PORT") || 3000;
+
 	if (!isProduction) {
 		SwaggerConfig.setup(app, {
 			title: "API Documentation",
@@ -81,7 +82,11 @@ async function bootstrap() {
 		);
 	}
 
-	await app.listen(port);
+	// Railway asigna el puerto dinámicamente
+	await app.listen(port, "0.0.0.0");
+
+	logger.log(`🚀 Application is running on port ${port}`);
+	logger.log(`🌍 Environment: ${envService.get("NODE_ENV")}`);
 }
 
 bootstrap();
