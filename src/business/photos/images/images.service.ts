@@ -76,7 +76,7 @@ export class ImagesService {
 		id_relation: string,
 	) {
 		const errors: ImageError[] = [];
-		let results: {
+		const results: {
 			id_image: string;
 			url: string;
 			order: number;
