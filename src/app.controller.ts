@@ -6,7 +6,7 @@ export class AppController {
 	constructor(private readonly appService: AppService) {}
 
 	@HttpCode(HttpStatus.OK)
-	@Get("connection")
+	@Get()
 	getServer() {
 		return this.appService.getServer();
 	}
