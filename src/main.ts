@@ -82,7 +82,6 @@ async function bootstrap() {
 		);
 	}
 
-	// Railway asigna el puerto dinámicamente
 	await app.listen(port, "0.0.0.0");
 
 	logger.log(`🚀 Application is running on port ${port}`);

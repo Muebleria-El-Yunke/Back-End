@@ -1,98 +1,215 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🪑 Mueblería El Yunke – API Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API desarrollada con **NestJS + TypeScript**, centrada en escalabilidad, seguridad y una arquitectura modular orientada al dominio.
+Incluye autenticación JWT, manejo de imágenes con Cloudinary, control de inventario, carrito, órdenes, pagos y blog.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+<div align="center">
+  <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="NestJS Logo"/>
+  <h3>Backend desarrollado por <strong>Franco Bottaro</strong></h3>
+</div>
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 🚀 Tecnologías principales
 
-```bash
-$ yarn install
+* **NestJS 11** (arquitectura modular avanzada)
+* **TypeScript**
+* **TypeORM + MySQL**
+* **Docker + Docker Compose**
+* **Cloudinary** para imágenes
+* **JWT + Passport + Guards**
+* **Zod** para validación estricta
+* **Helmet + CSRF** para seguridad adicional
+* **Swagger** para documentación
+* **RxJS** para flujos asíncronos
+
+---
+
+## 📁 Arquitectura del proyecto
+
+El proyecto sigue un enfoque **Domain-Driven / Feature-Based**, cada módulo encapsula DTOs, entidades, servicios y lógica de negocio.
+
+```
+src
+├── business
+│   ├── accounts          → Usuarios, perfiles y autenticación
+│   ├── blog              → Artículos y posteos
+│   ├── inventory         → Productos, carrito, pedidos y pagos
+│   └── photos            → Cloudinary e imágenes
+└── core
+    ├── config            → Env, DB, cookies, multer, swagger, seguridad
+    ├── constants
+    ├── init              → Seeding automático (admin, productos)
+    └── utils
 ```
 
-## Compile and run the project
+✔ Separación real entre **dominio**, **infraestructura** y **configuración**
+✔ Módulos limpios y desacoplados
+✔ Swappable providers
+
+---
+
+## 📦 Instalación
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+yarn install
 ```
 
-## Run tests
+---
+
+## 🛠 Scripts útiles
+
+### Desarrollo
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+yarn start:dev
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Producción
 
 ```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+yarn build
+yarn start:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Linter
 
-## Resources
+```bash
+yarn lint
+```
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## 🐳 Docker + Makefile
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Este proyecto incluye un **Makefile** para manejar rápidamente la base de datos y el entorno.
 
-## Support
+### Crear la base de datos con Docker
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+make create-db
+```
 
-## Stay in touch
+### Resetear por completo la DB + dist
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+# Solo para desarrollo y muchas migraciones
+make reset-db
+```
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 🔐 Seguridad
+
+El proyecto implementa:
+
+* **Helmet** para proteger cabeceras
+* **CSRF doble cookie**
+* **JWT Access + Refresh Tokens**
+* **Rate limiting + Throttler**
+* **Validación fuerte con Zod + class-validator**
+
+---
+
+## 🖼 Manejo de Imágenes
+
+Cloudinary se utiliza para:
+
+* Subida segura
+* Transformaciones
+* URLs optimizadas
+* Guardado en DB del resultado
+
+---
+
+## 📄 Documentación API
+
+Swagger está disponible en entorno de desarrollo:
+
+```
+http://localhost:3000/api/docs
+```
+
+---
+
+## 📜 Variables de Entorno
+
+La app utiliza `@nestjs/config` y un validador de esquemas.
+
+Variables recomendadas:
+
+```
+-------------------------------------
+🔥 Server
+-------------------------------------
+PORT=3000
+NODE_ENV=development
+JWT_SECRET=tu_jwt_secret
+REFRESH_JWT=tu_refresh_secret
+SECRET_COOKIE=tu_secret_cookie
+
+# Admin inicial (se genera al iniciar la app)
+PASSWORD_ADMIN=Admin123!
+NAME_ADMIN=AdminUser
+EMAIL_ADMIN=admin@example.com
+
+-------------------------------------
+ 📸 Cloudinary
+-------------------------------------
+CLOUDINARY_API_KEY=123456789012345678
+CLOUDINARY_API_SECRET=xxxxxxxxxxxxxxxxxxx
+CLOUDINARY_NAME=muebleria-yunke
+
+-------------------------------------
+ 🗄 Base de Datos
+-------------------------------------
+USERNAME_DB=root
+PASSWORD_DB=Password123!
+NAME_DB=yunke
+PORT_DB=3306
+HOST_DB=localhost
+
+ -------------------------------------
+ 🌐 Frontend
+ -------------------------------------
+FRONTEND_URL=http://localhost:4200
+
+```
+
+---
+## 🚀 Despliegue
+El backend ya fue configurado para producción:
+
+* Build:
+
+  ```bash
+  yarn build
+  ```
+* Ejecutar:
+
+  ```bash
+  yarn start:prod
+  ```
+
+Por su estructura modular y uso de providers, se puede desplegar fácilmente en:
+
+* AWS (EC2, ECS, RDS)
+* Railway
+* Render
+* DigitalOcean
+* Docker Swarm / K8s
+
+---
+
+## 👤 Autor
+**Franco Bottaro**
+Desarrollador Full Stack – TypeScript.<br/>
+📧 francoabottaro@gmail.com <br/>
+📍 Buenos Aires, Argentina
+
+---
+
+## 📄 Licencia
+Este proyecto está bajo licencia **privada**.
+
