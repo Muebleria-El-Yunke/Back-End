@@ -94,7 +94,7 @@ make create-db
 ### Resetear por completo la DB + dist
 
 ```bash
-# Solo para desarrollo y muchas migraciones
+# Solo desarrollo y evitar el exceso de migraciones
 make reset-db
 ```
 
