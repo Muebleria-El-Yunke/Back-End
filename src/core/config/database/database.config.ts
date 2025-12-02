@@ -17,19 +17,27 @@ export const TypeOrmConfig: TypeOrmModuleAsyncOptions = {
 			database: envService.get("NAME_DB"),
 			entities: [`${__dirname}/../../../**/*.entity{.ts,.js}`],
 			synchronize: !isProduction, // Solo en desarrollo
-			logging: !isProduction,
 
-			// Configuraciones importantes para Railway
+			// Configuraciones SOLO para MySQL2 driver
 			extra: {
-				connectionLimit: 5, // Límite del plan gratuito
-				connectTimeout: 60000,
-				acquireTimeout: 60000,
-				timeout: 60000,
+				connectionLimit: 5,
+				waitForConnections: true,
+				queueLimit: 0,
+				enableKeepAlive: true,
+				keepAliveInitialDelay: 0,
+				// Estas son las opciones correctas de MySQL2 para timeouts
+				connectTimeout: 60000, // MySQL2 sí acepta esto
 			},
 
-			// Retry logic para conexiones inestables
+			// Retry logic para conexiones inestables (TypeORM nivel)
 			retryAttempts: 3,
 			retryDelay: 3000,
+
+			// Logging para debugging (opcional)
+			logging: !isProduction ? ["error", "warn"] : false,
+
+			// Mantener conexiones vivas (TypeORM nivel)
+			keepConnectionAlive: true,
 		};
 	},
 };
