@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { LOCAL_FRONTEND_URL } from "../constants";
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,50}$/;
 
-export const envSchema = z.object({
+const baseEnvSchema = z.object({
 	// * Server
 	PORT: z.coerce.number().min(1000).positive().int().default(3000),
 	JWT_SECRET: z.string().min(8),
@@ -19,7 +20,7 @@ export const envSchema = z.object({
 	CLOUDINARY_NAME: z.string().min(2),
 
 	// * Database
-	USERNAME_DB: z.string().nonempty({ message: "DB_USER is required" }),
+	USERNAME_DB: z.string().min(1, { message: "DB_USER is required" }),
 	PASSWORD_DB: z
 		.string()
 		.min(8, { message: "Password must be at least 8 characters long" })
@@ -36,10 +37,23 @@ export const envSchema = z.object({
 		.refine((val) => /[^A-Za-z0-9]/.test(val), {
 			message: "Password must contain at least one symbol",
 		}),
-	NAME_DB: z.string().nonempty({ message: "DB_NAME is required" }),
+	NAME_DB: z.string().min(1, { message: "DB_NAME is required" }),
 	PORT_DB: z.coerce.number().int().positive({ message: "DB_PORT must be a positive integer" }),
-	HOST_DB: z.string().nonempty({ message: "DB_HOST is required" }).default("localhost"),
-	FRONTEND_URL: z.string().url().optional(),
+	HOST_DB: z.string().min(1, { message: "DB_HOST is required" }).default("localhost"),
+	FRONTEND_URL: z.string().url().optional().default(LOCAL_FRONTEND_URL),
 });
+
+export const envSchema = baseEnvSchema.refine(
+	(data) => {
+		if (data.NODE_ENV === "production") {
+			return data.FRONTEND_URL !== LOCAL_FRONTEND_URL;
+		}
+		return true;
+	},
+	{
+		message: "FRONTEND_URL must be explicitly set in production environment",
+		path: ["FRONTEND_URL"],
+	},
+);
 
 export type Env = z.infer<typeof envSchema>;

@@ -56,16 +56,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_AUTH_GUARD) {
 			throw new UnauthorizedException(`Invalid token: Unknown role "${payload.role}"`);
 		}
 
-		// Validación adicional de expiración
 		if (payload.exp && payload.exp * 1000 < Date.now()) {
 			throw new UnauthorizedException("Token expired");
 		}
 	}
 
-	/**
-	 * Extrae el token JWT de cookies (más seguro que query params)
-	 * REMOVIDO: Extracción desde query parameters por razones de seguridad
-	 */
 	static extractTokenFromCookie(req: Request): string | null {
 		const cookieToken = req.cookies?.[USER_TOKEN];
 

@@ -4,13 +4,9 @@ import { IsBoolean, IsNotEmpty, IsOptional, IsUrl, Matches } from "class-validat
 import { CreateProfileDto } from "./create-profile.dto";
 import { PartialType } from "@nestjs/mapped-types";
 
-// ========== CONSTANTES ==========
-
 const REGEX = {
 	WHATSAPP: /^https:\/\/wa\.me\/\d{10,12}$/,
 } as const;
-
-// ========== HELPERS ==========
 
 const transformWhatsApp = ({ value }: { value: string }) => {
 	if (!value) return value;
@@ -18,7 +14,6 @@ const transformWhatsApp = ({ value }: { value: string }) => {
 	return transformed.endsWith("/") ? transformed.slice(0, -1) : transformed;
 };
 
-// ========== DTO ==========
 export class UpdateProfileDto extends PartialType(CreateProfileDto) {}
 
 export class UpdateSellerDto extends UpdateProfileDto {

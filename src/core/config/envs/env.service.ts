@@ -13,4 +13,8 @@ export class EnvService {
 	inProduction() {
 		return this.configService.get("NODE_ENV") === "production";
 	}
+
+	isDevelopment(): boolean {
+		return this.configService.get("NODE_ENV", { infer: true }) === "development";
+	}
 }

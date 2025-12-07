@@ -11,7 +11,7 @@ import { TypeOrmConfig } from "core/config/database/database.config";
 import { EnvModule } from "core/config/envs/env.module";
 import { AppSecure } from "core/config/security/security.config";
 import { InitModule } from "core/init/init.module";
-import { AppController } from "./app.controller";
+import { HealthGateway } from "./health.gateway";
 import { AppService } from "./app.service";
 
 @Module({
@@ -35,7 +35,7 @@ import { AppService } from "./app.service";
 		// TODO ProfileModule,
 		// TODO PaymentModule,
 	],
-	controllers: [AppController],
-	providers: [...AppSecure, AppService],
+	controllers: [],
+	providers: [...AppSecure, AppService, HealthGateway],
 })
 export class AppModule {}

@@ -43,9 +43,6 @@ export class JwtAuthGuard extends AuthGuard(JWT_AUTH_GUARD) {
 			);
 		}
 
-		// Log exitoso (opcional, comentar en producción si genera mucho ruido)
-		// this.logger.debug(`Authenticated user ${user.id_user} accessing ${request.path}`);
-
 		return user;
 	}
 }

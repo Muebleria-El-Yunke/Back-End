@@ -38,7 +38,6 @@ import { UpdateBlogDto } from "./dto/update-blog.dto";
 export class BlogController {
 	constructor(private readonly blogService: BlogService) {}
 
-	// ========== CREATE BLOG POST ==========
 	@SellerOrAdmin()
 	@Post()
 	@HttpCode(HttpStatus.CREATED)
@@ -117,7 +116,6 @@ export class BlogController {
 		return this.blogService.create(createBlogDto, photo ? [photo] : undefined);
 	}
 
-	// ========== GET ALL POSTS ==========
 	@Get()
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({ summary: "Obtener todos los posts" })
@@ -126,7 +124,6 @@ export class BlogController {
 		return this.blogService.findAll();
 	}
 
-	// ========== GET PUBLISHED POSTS ==========
 	@Get("published")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({ summary: "Obtener posts publicados" })
@@ -135,7 +132,6 @@ export class BlogController {
 		return this.blogService.findPublished();
 	}
 
-	// ========== GET POSTS BY CATEGORY ==========
 	@Get("category/:category")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({ summary: "Obtener posts por categoría" })
@@ -144,7 +140,6 @@ export class BlogController {
 		return this.blogService.findByCategory(category);
 	}
 
-	// ========== GET POSTS BY TARGET ==========
 	@Get("tag/:target")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({ summary: "Obtener posts por target" })
@@ -153,7 +148,6 @@ export class BlogController {
 		return this.blogService.findByTarget(target);
 	}
 
-	// ========== GET POST BY SLUG ==========
 	@Get("slug/:slug")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({ summary: "Obtener post por slug" })
@@ -163,7 +157,6 @@ export class BlogController {
 		return this.blogService.findBySlug(slug);
 	}
 
-	// ========== GET POST BY ID ==========
 	@Get(":id_post")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({ summary: "Obtener post por ID" })
@@ -173,7 +166,6 @@ export class BlogController {
 		return this.blogService.findOne(id_post);
 	}
 
-	// ========== UPDATE POST (SOLO DATOS) ==========
 	@SellerOrAdmin()
 	@Patch(":id_post")
 	@HttpCode(HttpStatus.OK)
@@ -186,7 +178,6 @@ export class BlogController {
 		return this.blogService.update(id_post, updateBlogDto);
 	}
 
-	// ========== ADD IMAGES TO POST ==========
 	@SellerOrAdmin()
 	@Post(":id_post/images")
 	@HttpCode(HttpStatus.CREATED)
@@ -215,7 +206,6 @@ export class BlogController {
 		return this.blogService.addImages(id_post, [photo]);
 	}
 
-	// ========== REPLACE ALL IMAGES ==========
 	@SellerOrAdmin()
 	@Put(":id_post/images")
 	@HttpCode(HttpStatus.OK)
@@ -244,7 +234,6 @@ export class BlogController {
 		return this.blogService.replaceImages(id_post, [photo]);
 	}
 
-	// ========== DELETE SPECIFIC IMAGE ==========
 	@SellerOrAdmin()
 	@Delete(":id_post/images/:id_image")
 	@HttpCode(HttpStatus.NO_CONTENT)
@@ -258,7 +247,6 @@ export class BlogController {
 		return this.blogService.removeImage(id_post, id_image);
 	}
 
-	// ========== DELETE ALL IMAGES ==========
 	@SellerOrAdmin()
 	@Delete(":id_post/images")
 	@HttpCode(HttpStatus.NO_CONTENT)
@@ -269,7 +257,6 @@ export class BlogController {
 		return this.blogService.removeAllImages(id_post);
 	}
 
-	// ========== DELETE POST ==========
 	@SellerOrAdmin()
 	@Delete(":id_post")
 	@HttpCode(HttpStatus.NO_CONTENT)

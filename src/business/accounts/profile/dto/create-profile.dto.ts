@@ -3,7 +3,6 @@ import { Transform, type TransformFnParams } from "class-transformer";
 import { IsInt, IsOptional, IsString, Length, Matches, Max, Min } from "class-validator";
 import { formatFullName } from "src/core/utils/works";
 
-// ========== CONSTANTES ==========
 const VALIDATION = {
 	NAME: { MIN: 4, MAX: 50 },
 	AGE: { MIN: 16, MAX: 118 },
@@ -14,8 +13,6 @@ const VALIDATION = {
 const REGEX = {
 	COUNTRY_PREFIX: /^\+\d{1,3}$/,
 } as const;
-
-// ========== HELPERS ==========
 
 const transformFullName = ({ value }: TransformFnParams) => formatFullName(value);
 
@@ -33,7 +30,6 @@ const transformPhoneNumber = ({ value }: TransformFnParams) => {
 	return cleaned;
 };
 
-// ========== DTO ==========
 export class CreateProfileDto {
 	@ApiProperty({
 		description: "Nombre del usuario",

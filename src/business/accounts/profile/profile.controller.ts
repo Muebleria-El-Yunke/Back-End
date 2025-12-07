@@ -38,8 +38,6 @@ import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { type IdsProfileInterface } from "./interface/profile.interface";
 import { ProfileService } from "./profile.service";
 
-// ========== TIPOS Y CONSTANTES ==========
-
 const MESSAGES = {
 	CREATED: "Profile created successfully",
 	UPDATED: "Profile updated successfully",
@@ -47,13 +45,9 @@ const MESSAGES = {
 	RETRIEVED_ALL: "Profiles retrieved successfully",
 } as const;
 
-// ========== DECORADORES COMBINADOS ==========
-
 const CommonAuth = () => UseGuards(JwtAuthGuard, RolesGuard);
 
 const ProfileImageUpload = () => UseInterceptors(FileInterceptor("photo", imageUploadOptions));
-
-// ========== CONTROLADOR ==========
 
 @ApiTags("Profile")
 @Controller("profile")
@@ -61,7 +55,6 @@ const ProfileImageUpload = () => UseInterceptors(FileInterceptor("photo", imageU
 export class ProfileController {
 	constructor(private readonly profileService: ProfileService) {}
 
-	// ========== CREAR PERFIL ==========
 	@Authenticated()
 	@Post("create")
 	@HttpCode(HttpStatus.CREATED)
@@ -102,7 +95,6 @@ export class ProfileController {
 		};
 	}
 
-	// ========== ACTUALIZAR PERFIL ==========
 	@Authenticated()
 	@Patch("update/:id_profile")
 	@HttpCode(HttpStatus.OK)
@@ -147,7 +139,6 @@ export class ProfileController {
 		};
 	}
 
-	// ========== LISTAR TODOS (ADMIN) ==========
 	@Admin()
 	@Get()
 	@HttpCode(HttpStatus.OK)
@@ -164,7 +155,6 @@ export class ProfileController {
 		};
 	}
 
-	// ========== OBTENER SELLER (PÚBLICO) ==========
 	@Public()
 	@Get("seller")
 	@HttpCode(HttpStatus.OK)
@@ -178,7 +168,6 @@ export class ProfileController {
 		};
 	}
 
-	// ========== OBTENER POR ID ==========
 	@Authenticated()
 	@Get(":id")
 	@HttpCode(HttpStatus.OK)
@@ -195,7 +184,6 @@ export class ProfileController {
 		};
 	}
 
-	// ========== ELIMINAR MI PERFIL ==========
 	@Authenticated()
 	@Delete()
 	@HttpCode(HttpStatus.OK)

@@ -1,24 +1,15 @@
-import {
-	CanActivate,
-	ExecutionContext,
-	ForbiddenException,
-	Injectable,
-	Logger,
-} from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ROLE } from "core/enum/role.enum";
 import { ROLES_KEY } from "../decorators/index.decorator";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-	private readonly logger = new Logger(RolesGuard.name);
-
 	constructor(private readonly reflector: Reflector) {}
 
 	canActivate(context: ExecutionContext): boolean {
 		const requiredRoles = this.#getRequiredRoles(context);
 
-		// Si no hay roles requeridos, permite el acceso
 		if (requiredRoles.length === 0) {
 			return true;
 		}
@@ -50,7 +41,6 @@ export class RolesGuard implements CanActivate {
 		}
 
 		if (!requiredRoles.includes(user.role)) {
-			// Log de intento de acceso no autorizado
 			throw new ForbiddenException(
 				`Insufficient permissions. Required roles: ${requiredRoles.join(", ")}`,
 			);
